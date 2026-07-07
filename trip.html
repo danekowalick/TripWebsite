@@ -98,9 +98,18 @@
       text-decoration: none; transition: all 0.2s; font-family: 'Inter', sans-serif;
     }
     .hero .photos-link:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.4); }
+    .hero .map-toggle {
+      display: block; margin: 0.75rem auto 0; padding: 0.5rem 1.1rem;
+      background: transparent; border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 8px; color: #fff; font-size: 0.8rem; font-weight: 500;
+      cursor: pointer; font-family: 'Inter', sans-serif;
+      transition: all 0.2s;
+    }
+    .hero .map-toggle:hover { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.5); }
 
-    /* Overview Map */
-    .map-overview { padding: 4rem 0; background: var(--cream); }
+    /* Map section */
+    .map-overview { padding: 4rem 0; background: var(--cream); display: none; }
+    .map-overview.visible { display: block; }
     .map-overview h2 { text-align: center; font-family: 'Playfair Display', serif; font-size: clamp(1.5rem, 3vw, 2rem); color: var(--navy); margin-bottom: 0.5rem; }
     .map-overview .subtitle { text-align: center; color: var(--text-light); font-size: 0.9rem; margin-bottom: 2rem; }
     #tripMap { height: 520px; border-radius: var(--radius); box-shadow: 0 4px 24px rgba(0,0,0,0.1); border: 2px solid var(--warm); }
@@ -290,6 +299,7 @@
       <span>Oct 3 &ndash; Oct 11, 2026</span><span>9 Days</span><span>Boston &rarr; Concord &rarr; Deerfield &rarr; Plymouth</span>
     </div>
     <a class="photos-link" href="https://photos.app.goo.gl/PPzan23vGfevypyn7" target="_blank" rel="noopener">&#128247; Google Photos Album</a>
+    <button class="map-toggle" id="mapToggle">&#128205; Show Route Map</button>
   </div>
 </section>
 
@@ -917,6 +927,22 @@
     });
   }
 
+  // ---- Map toggle ----
+  const mapToggle = document.getElementById('mapToggle');
+  const mapSection = document.querySelector('.map-overview');
+  if (mapToggle && mapSection) {
+    if (localStorage.getItem('mapVisible') === 'on') {
+      mapSection.classList.add('visible');
+      mapToggle.textContent = '\u{1F4CD} Hide Route Map';
+    }
+    mapToggle.addEventListener('click', () => {
+      const isVisible = mapSection.classList.toggle('visible');
+      mapToggle.textContent = isVisible ? '\u{1F4CD} Hide Route Map' : '\u{1F4CD} Show Route Map';
+      localStorage.setItem('mapVisible', isVisible ? 'on' : 'off');
+      if (isVisible && typeof tripMap !== 'undefined') setTimeout(() => tripMap.invalidateSize(), 100);
+    });
+  }
+
   // ---- Escape HTML ----
   function escHtml(s) { const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
 
@@ -1289,11 +1315,11 @@
 
   const mapEl = document.getElementById('tripMap');
   if (mapEl) {
-    const map = L.map('tripMap', { scrollWheelZoom: false }).setView([42.34, -71.05], 9);
+    let tripMap = L.map('tripMap', { scrollWheelZoom: false }).setView([42.34, -71.05], 9);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a>'
-    }).addTo(map);
+    }).addTo(tripMap);
 
     // Group by day for polylines
     const dayGroups = {};
@@ -1310,7 +1336,7 @@
 
       // polyline
       const latlngs = pts.map(p => [p.lat, p.lng]);
-      L.polyline(latlngs, { color, weight: 3, opacity: 0.7 }).addTo(map);
+      L.polyline(latlngs, { color, weight: 3, opacity: 0.7 }).addTo(tripMap);
 
       // markers
       pts.forEach(p => {
@@ -1335,8 +1361,8 @@
     }
 
     // Enable scroll on click/tap
-    mapEl.addEventListener('click', () => { map.scrollWheelZoom.enable(); });
-    mapEl.addEventListener('mouseleave', () => { map.scrollWheelZoom.disable(); });
+    mapEl.addEventListener('click', () => { tripMap.scrollWheelZoom.enable(); });
+    mapEl.addEventListener('mouseleave', () => { tripMap.scrollWheelZoom.disable(); });
   }
 </script>
 
