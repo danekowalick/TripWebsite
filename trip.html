@@ -934,12 +934,16 @@
     if (localStorage.getItem('mapVisible') === 'on') {
       mapSection.classList.add('visible');
       mapToggle.textContent = '\u{1F4CD} Hide Route Map';
+      initMap();
     }
     mapToggle.addEventListener('click', () => {
       const isVisible = mapSection.classList.toggle('visible');
       mapToggle.textContent = isVisible ? '\u{1F4CD} Hide Route Map' : '\u{1F4CD} Show Route Map';
       localStorage.setItem('mapVisible', isVisible ? 'on' : 'off');
-      if (isVisible && typeof tripMap !== 'undefined') setTimeout(() => tripMap.invalidateSize(), 100);
+      if (isVisible) {
+        initMap();
+        setTimeout(() => { if (tripMap) tripMap.invalidateSize(); }, 100);
+      }
     });
   }
 
@@ -1314,42 +1318,39 @@
   const dayLabels = ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7', 'Day 8', 'Day 9'];
 
   const mapEl = document.getElementById('tripMap');
-  if (mapEl) {
-    let tripMap = L.map('tripMap', { scrollWheelZoom: false }).setView([42.34, -71.05], 9);
+  let tripMap = null;
+  let mapInitialized = false;
+  function initMap() {
+    if (mapInitialized || !mapEl) return;
+    mapInitialized = true;
+    tripMap = L.map('tripMap', { scrollWheelZoom: false }).setView([42.34, -71.05], 9);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a>'
     }).addTo(tripMap);
 
-    // Group by day for polylines
     const dayGroups = {};
     locations.forEach(loc => {
       if (!dayGroups[loc.day]) dayGroups[loc.day] = [];
       dayGroups[loc.day].push(loc);
     });
 
-    // Add markers and polylines per day
     Object.keys(dayGroups).forEach(d => {
       const day = parseInt(d);
       const pts = dayGroups[day];
       const color = dayColors[day - 1];
-
-      // polyline
       const latlngs = pts.map(p => [p.lat, p.lng]);
       L.polyline(latlngs, { color, weight: 3, opacity: 0.7 }).addTo(tripMap);
-
-      // markers
       pts.forEach(p => {
         const markerColor = day === 9 ? '#888' : color;
         L.circleMarker([p.lat, p.lng], {
           radius: 8, fillColor: markerColor, color: '#fff',
           weight: 2, opacity: 1, fillOpacity: 0.9
-        }).addTo(map)
+        }).addTo(tripMap)
           .bindPopup(`<strong>${p.name}</strong><br>${dayLabels[day - 1]}`);
       });
     });
 
-    // Legend
     const legend = document.getElementById('mapLegend');
     if (legend) {
       dayLabels.forEach((label, i) => {
@@ -1360,7 +1361,6 @@
       });
     }
 
-    // Enable scroll on click/tap
     mapEl.addEventListener('click', () => { tripMap.scrollWheelZoom.enable(); });
     mapEl.addEventListener('mouseleave', () => { tripMap.scrollWheelZoom.disable(); });
   }
