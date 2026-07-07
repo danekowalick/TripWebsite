@@ -157,38 +157,6 @@
       display: flex; align-items: center; gap: 0.3rem;
     }
 
-    /* Comment Section per Event */
-    .comments-section { margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid rgba(0,0,0,0.06); }
-    .comments-section .comment-form { display: flex; gap: 0.5rem; margin-bottom: 0.5rem; }
-    .comments-section .comment-form input {
-      flex: 1; padding: 0.45rem 0.7rem; border: 1px solid rgba(0,0,0,0.1);
-      border-radius: 6px; font-family: 'Inter', sans-serif; font-size: 0.8rem;
-      outline: none; transition: border-color 0.2s;
-    }
-    .comments-section .comment-form input:focus { border-color: var(--accent); }
-    .comments-section .comment-form button {
-      padding: 0.45rem 0.9rem; background: var(--accent); color: white;
-      border: none; border-radius: 6px; font-size: 0.78rem; font-weight: 500;
-      cursor: pointer; transition: background 0.2s; white-space: nowrap;
-    }
-    .comments-section .comment-form button:hover { background: var(--accent-light); }
-    .comments-list { display: flex; flex-direction: column; gap: 0.35rem; max-height: 160px; overflow-y: auto; }
-    .comments-list::-webkit-scrollbar { width: 4px; }
-    .comments-list::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 2px; }
-    .comment-item {
-      font-size: 0.78rem; padding: 0.35rem 0.6rem;
-      background: rgba(154, 142, 126, 0.06); border-radius: 4px;
-      display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem;
-    }
-    .comment-item .comment-text { flex: 1; color: var(--text); }
-    .comment-item .comment-time { font-size: 0.65rem; color: var(--muted); white-space: nowrap; }
-    .comment-item .delete-comment {
-      background: none; border: none; color: var(--muted); cursor: pointer;
-      font-size: 0.7rem; padding: 0.1rem 0.3rem; border-radius: 3px;
-      transition: all 0.15s; opacity: 0.4;
-    }
-    .comment-item .delete-comment:hover { color: var(--accent); background: rgba(157,78,60,0.1); opacity: 1; }
-    .no-comments { font-size: 0.75rem; color: var(--muted); font-style: italic; }
     .event-card .card-body .day-note { font-size: 0.88rem; color: var(--text-light); font-style: italic; margin-bottom: 0.75rem; }
 
     /* MODAL */
@@ -273,7 +241,6 @@
       .hero { padding: 3rem 1rem 2.5rem; }
       .hero .meta { gap: 1rem; font-size: 0.78rem; }
       .day-section { padding: 2.5rem 0; }
-      .comment-item { flex-wrap: wrap; }
       .modal-body { padding: 1.25rem; }
       .modal-img { height: 220px; }
       .modal-body h2 { font-size: 1.3rem; }
@@ -336,10 +303,7 @@
             <a href="https://www.google.com/maps/search/?api=1&query=Boston+Logan+International+Airport+Boston+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
           </div>
           <div class="learn-more-hint">Click for history &amp; primary sources</div>
-          <div class="comments-section" data-site="boston-logan" onclick="event.stopPropagation()">
-            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
-            <div class="comments-list"></div>
-          </div>
+
         </div>
       </div>
       <div class="event-card">
@@ -347,10 +311,7 @@
         <div class="card-body">
           <h3>Rental Car &amp; Hotel</h3>
           <p class="day-note">Pick up rental car at Logan Airport. Check into your hotel in the greater Boston area.</p>
-          <div class="comments-section" data-site="arrival-logistics" onclick="event.stopPropagation()">
-            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
-            <div class="comments-list"></div>
-          </div>
+
         </div>
       </div>
     </div>
@@ -380,10 +341,7 @@
             <a href="https://www.google.com/maps/search/?api=1&query=Lexington+Green+Lexington+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
           </div>
           <div class="learn-more-hint">Click for history &amp; primary sources</div>
-          <div class="comments-section" data-site="lexington-green" onclick="event.stopPropagation()">
-            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
-            <div class="comments-list"></div>
-          </div>
+
         </div>
       </div>
       <div class="event-card" onclick="openModal('buckman-tavern')">
@@ -399,10 +357,7 @@
             <a href="https://www.google.com/maps/search/?api=1&query=Buckman+Tavern+Lexington+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
           </div>
           <div class="learn-more-hint">Click for history &amp; primary sources</div>
-          <div class="comments-section" data-site="buckman-tavern" onclick="event.stopPropagation()">
-            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
-            <div class="comments-list"></div>
-          </div>
+
         </div>
       </div>
       <div class="event-card" onclick="openModal('hancock-clarke')">
@@ -418,10 +373,7 @@
             <a href="https://www.google.com/maps/search/?api=1&query=Hancock+Clarke+House+Lexington+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
           </div>
           <div class="learn-more-hint">Click for history &amp; primary sources</div>
-          <div class="comments-section" data-site="hancock-clarke" onclick="event.stopPropagation()">
-            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
-            <div class="comments-list"></div>
-          </div>
+
         </div>
       </div>
       <div class="event-card" onclick="openModal('battle-road')">
@@ -437,10 +389,7 @@
             <a href="https://www.google.com/maps/search/?api=1&query=Battle+Road+Trail+Minute+Man+NHP+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
           </div>
           <div class="learn-more-hint">Click for history &amp; primary sources</div>
-          <div class="comments-section" data-site="battle-road" onclick="event.stopPropagation()">
-            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
-            <div class="comments-list"></div>
-          </div>
+
         </div>
       </div>
       <div class="event-card" onclick="openModal('hartwell-tavern')">
@@ -456,10 +405,7 @@
             <a href="https://www.google.com/maps/search/?api=1&query=Hartwell+Tavern+Minute+Man+NHP+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
           </div>
           <div class="learn-more-hint">Click for history &amp; primary sources</div>
-          <div class="comments-section" data-site="hartwell-tavern" onclick="event.stopPropagation()">
-            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
-            <div class="comments-list"></div>
-          </div>
+
         </div>
       </div>
       <div class="event-card" onclick="openModal('old-north-bridge')">
@@ -475,10 +421,7 @@
             <a href="https://www.google.com/maps/search/?api=1&query=Old+North+Bridge+Concord+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
           </div>
           <div class="learn-more-hint">Click for history &amp; primary sources</div>
-          <div class="comments-section" data-site="old-north-bridge" onclick="event.stopPropagation()">
-            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
-            <div class="comments-list"></div>
-          </div>
+
         </div>
       </div>
     </div>
@@ -508,10 +451,7 @@
             <a href="https://www.google.com/maps/search/?api=1&query=Old+Manse+Concord+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
           </div>
           <div class="learn-more-hint">Click for history &amp; primary sources</div>
-          <div class="comments-section" data-site="old-manse" onclick="event.stopPropagation()">
-            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
-            <div class="comments-list"></div>
-          </div>
+
         </div>
       </div>
       <div class="event-card" onclick="openModal('orchard-house')">
@@ -527,10 +467,7 @@
             <a href="https://www.google.com/maps/search/?api=1&query=Orchard+House+Concord+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
           </div>
           <div class="learn-more-hint">Click for history &amp; primary sources</div>
-          <div class="comments-section" data-site="orchard-house" onclick="event.stopPropagation()">
-            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
-            <div class="comments-list"></div>
-          </div>
+
         </div>
       </div>
       <div class="event-card" onclick="openModal('sleepy-hollow')">
@@ -546,10 +483,7 @@
             <a href="https://www.google.com/maps/search/?api=1&query=Sleepy+Hollow+Cemetery+Concord+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
           </div>
           <div class="learn-more-hint">Click for history &amp; primary sources</div>
-          <div class="comments-section" data-site="sleepy-hollow" onclick="event.stopPropagation()">
-            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
-            <div class="comments-list"></div>
-          </div>
+
         </div>
       </div>
       <div class="event-card" onclick="openModal('walden-pond')">
@@ -565,10 +499,7 @@
             <a href="https://www.google.com/maps/search/?api=1&query=Walden+Pond+Concord+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
           </div>
           <div class="learn-more-hint">Click for history &amp; primary sources</div>
-          <div class="comments-section" data-site="walden-pond" onclick="event.stopPropagation()">
-            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
-            <div class="comments-list"></div>
-          </div>
+
         </div>
       </div>
     </div>
@@ -598,10 +529,7 @@
             <a href="https://www.google.com/maps/search/?api=1&query=Historic+Deerfield+Deerfield+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
           </div>
           <div class="learn-more-hint">Click for history &amp; primary sources</div>
-          <div class="comments-section" data-site="historic-deerfield" onclick="event.stopPropagation()">
-            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
-            <div class="comments-list"></div>
-          </div>
+
         </div>
       </div>
       <div class="event-card" onclick="openModal('nantasket-beach')">
@@ -617,10 +545,7 @@
             <a href="https://www.google.com/maps/search/?api=1&query=Nantasket+Beach+Hull+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
           </div>
           <div class="learn-more-hint">Click for history &amp; primary sources</div>
-          <div class="comments-section" data-site="nantasket-beach" onclick="event.stopPropagation()">
-            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
-            <div class="comments-list"></div>
-          </div>
+
         </div>
       </div>
     </div>
@@ -650,10 +575,7 @@
             <a href="https://www.google.com/maps/search/?api=1&query=Isabella+Stewart+Gardner+Museum+Boston+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
           </div>
           <div class="learn-more-hint">Click for history &amp; primary sources</div>
-          <div class="comments-section" data-site="gardner-museum" onclick="event.stopPropagation()">
-            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
-            <div class="comments-list"></div>
-          </div>
+
         </div>
       </div>
       <div class="event-card" onclick="openModal('mfa-boston')">
@@ -669,10 +591,7 @@
             <a href="https://www.google.com/maps/search/?api=1&query=Museum+of+Fine+Arts+Boston+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
           </div>
           <div class="learn-more-hint">Click for history &amp; primary sources</div>
-          <div class="comments-section" data-site="mfa-boston" onclick="event.stopPropagation()">
-            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
-            <div class="comments-list"></div>
-          </div>
+
         </div>
       </div>
       <div class="event-card" onclick="openModal('beacon-hill')">
@@ -688,10 +607,7 @@
             <a href="https://www.google.com/maps/search/?api=1&query=Beacon+Hill+Boston+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
           </div>
           <div class="learn-more-hint">Click for history &amp; primary sources</div>
-          <div class="comments-section" data-site="beacon-hill" onclick="event.stopPropagation()">
-            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
-            <div class="comments-list"></div>
-          </div>
+
         </div>
       </div>
       <div class="event-card" onclick="openModal('bunker-hill')">
@@ -707,10 +623,7 @@
             <a href="https://www.google.com/maps/search/?api=1&query=Bunker+Hill+Monument+Boston+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
           </div>
           <div class="learn-more-hint">Click for history &amp; primary sources</div>
-          <div class="comments-section" data-site="bunker-hill" onclick="event.stopPropagation()">
-            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
-            <div class="comments-list"></div>
-          </div>
+
         </div>
       </div>
     </div>
@@ -740,10 +653,7 @@
             <a href="https://www.google.com/maps/search/?api=1&query=Nantasket+Beach+Hull+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
           </div>
           <div class="learn-more-hint">Click for history &amp; primary sources</div>
-          <div class="comments-section" data-site="flex-nantasket" onclick="event.stopPropagation()">
-            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
-            <div class="comments-list"></div>
-          </div>
+
         </div>
       </div>
       <div class="event-card">
@@ -754,10 +664,7 @@
           <div class="links">
             <a href="https://www.google.com/maps/search/?api=1&query=Plymouth+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
           </div>
-          <div class="comments-section" data-site="flex-plymouth" onclick="event.stopPropagation()">
-            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
-            <div class="comments-list"></div>
-          </div>
+
         </div>
       </div>
     </div>
@@ -787,10 +694,7 @@
             <a href="https://www.google.com/maps/search/?api=1&query=Boston+Common+Boston+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
           </div>
           <div class="learn-more-hint">Click for history &amp; primary sources</div>
-          <div class="comments-section" data-site="boston-common" onclick="event.stopPropagation()">
-            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
-            <div class="comments-list"></div>
-          </div>
+
         </div>
       </div>
       <div class="event-card" onclick="openModal('paul-revere')">
@@ -806,10 +710,7 @@
             <a href="https://www.google.com/maps/search/?api=1&query=Paul+Revere+House+Boston+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
           </div>
           <div class="learn-more-hint">Click for history &amp; primary sources</div>
-          <div class="comments-section" data-site="paul-revere" onclick="event.stopPropagation()">
-            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
-            <div class="comments-list"></div>
-          </div>
+
         </div>
       </div>
       <div class="event-card" onclick="openModal('old-north-church')">
@@ -825,10 +726,7 @@
             <a href="https://www.google.com/maps/search/?api=1&query=Old+North+Church+Boston+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
           </div>
           <div class="learn-more-hint">Click for history &amp; primary sources</div>
-          <div class="comments-section" data-site="old-north-church" onclick="event.stopPropagation()">
-            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
-            <div class="comments-list"></div>
-          </div>
+
         </div>
       </div>
       <div class="event-card" onclick="openModal('old-south-mh')">
@@ -844,10 +742,7 @@
             <a href="https://www.google.com/maps/search/?api=1&query=Old+South+Meeting+House+Boston+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
           </div>
           <div class="learn-more-hint">Click for history &amp; primary sources</div>
-          <div class="comments-section" data-site="old-south-mh" onclick="event.stopPropagation()">
-            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
-            <div class="comments-list"></div>
-          </div>
+
         </div>
       </div>
       <div class="event-card" onclick="openModal('adams-nhp')">
@@ -863,10 +758,7 @@
             <a href="https://www.google.com/maps/search/?api=1&query=Adams+National+Historical+Park+Quincy+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
           </div>
           <div class="learn-more-hint">Click for history &amp; primary sources</div>
-          <div class="comments-section" data-site="adams-nhp" onclick="event.stopPropagation()">
-            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
-            <div class="comments-list"></div>
-          </div>
+
         </div>
       </div>
       <div class="event-card" onclick="openModal('stone-library')">
@@ -882,10 +774,7 @@
             <a href="https://www.google.com/maps/search/?api=1&query=Stone+Library+Quincy+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
           </div>
           <div class="learn-more-hint">Click for history &amp; primary sources</div>
-          <div class="comments-section" data-site="stone-library" onclick="event.stopPropagation()">
-            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
-            <div class="comments-list"></div>
-          </div>
+
         </div>
       </div>
     </div>
@@ -915,10 +804,7 @@
             <a href="https://www.google.com/maps/search/?api=1&query=Plymouth+Rock+Plymouth+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
           </div>
           <div class="learn-more-hint">Click for history &amp; primary sources</div>
-          <div class="comments-section" data-site="plymouth-rock" onclick="event.stopPropagation()">
-            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
-            <div class="comments-list"></div>
-          </div>
+
         </div>
       </div>
       <div class="event-card" onclick="openModal('mayflower-ii')">
@@ -934,10 +820,7 @@
             <a href="https://www.google.com/maps/search/?api=1&query=Mayflower+II+Plymouth+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
           </div>
           <div class="learn-more-hint">Click for history &amp; primary sources</div>
-          <div class="comments-section" data-site="mayflower-ii" onclick="event.stopPropagation()">
-            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
-            <div class="comments-list"></div>
-          </div>
+
         </div>
       </div>
     </div>
@@ -959,10 +842,7 @@
         <div class="card-body">
           <h3>Return to Boston Logan Airport</h3>
           <p class="day-note">Return rental car at Logan, check bags, and depart. Allow 2+ hours before flight time.</p>
-          <div class="comments-section" data-site="departure" onclick="event.stopPropagation()">
-            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
-            <div class="comments-list"></div>
-          </div>
+
         </div>
       </div>
     </div>
@@ -1002,27 +882,8 @@
   window.addEventListener('resize', updateNav, { passive: true });
   updateNav();
 
-  // ---- Comments via localStorage ----
-  function getComments(id) { try { return JSON.parse(localStorage.getItem('tripComments_'+id))||[]; } catch { return []; } }
-  function saveComments(id, c) { localStorage.setItem('tripComments_'+id, JSON.stringify(c)); }
-  function renderComments(el) {
-    const id = el.dataset.site, list = el.querySelector('.comments-list'), comments = getComments(id);
-    if (!comments.length) { list.innerHTML = '<div class="no-comments">No notes yet</div>'; return; }
-    list.innerHTML = comments.map((c,i) =>
-      `<div class="comment-item"><span class="comment-text">${escHtml(c.text)}</span><span class="comment-time">${c.time}</span><button class="delete-comment" onclick="deleteComment(this,'${id}',${i})">&times;</button></div>`
-    ).join('');
-  }
+  // ---- Escape HTML ----
   function escHtml(s) { const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
-  function addComment(btn) {
-    const sec = btn.closest('.comments-section'), inp = sec.querySelector('input'), text = inp.value.trim();
-    if (!text) return;
-    const id = sec.dataset.site, comments = getComments(id);
-    const now = new Date(), time = now.toLocaleDateString()+' '+now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
-    comments.push({text,time}); saveComments(id, comments); renderComments(sec); inp.value='';
-  }
-  function deleteComment(el, id, idx) { const c=getComments(id); c.splice(idx,1); saveComments(id,c); renderComments(el.closest('.comments-section')); }
-  document.addEventListener('keydown', e => { if (e.key==='Enter' && e.target.closest('.comment-form')) e.target.closest('.comment-form').querySelector('button').click(); });
-  document.querySelectorAll('.comments-section').forEach(renderComments);
 
   // ---- Modal ----
   const modalData = {
