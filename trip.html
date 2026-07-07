@@ -931,20 +931,17 @@
   const mapToggle = document.getElementById('mapToggle');
   const mapSection = document.querySelector('.map-overview');
   if (mapToggle && mapSection) {
-    if (localStorage.getItem('mapVisible') === 'on') {
-      mapSection.classList.add('visible');
-      mapToggle.textContent = '\u{1F4CD} Hide Route Map';
-      initMap();
-    }
     mapToggle.addEventListener('click', () => {
       const isVisible = mapSection.classList.toggle('visible');
       mapToggle.textContent = isVisible ? '\u{1F4CD} Hide Route Map' : '\u{1F4CD} Show Route Map';
       localStorage.setItem('mapVisible', isVisible ? 'on' : 'off');
-      if (isVisible) {
-        initMap();
-        setTimeout(() => { if (tripMap) tripMap.invalidateSize(); }, 100);
-      }
+      if (isVisible) setTimeout(() => { if (tripMap) tripMap.invalidateSize(); }, 100);
     });
+    if (localStorage.getItem('mapVisible') === 'on') {
+      mapSection.classList.add('visible');
+      mapToggle.textContent = '\u{1F4CD} Hide Route Map';
+      setTimeout(() => { if (tripMap) tripMap.invalidateSize(); }, 100);
+    }
   }
 
   // ---- Escape HTML ----
@@ -1319,10 +1316,7 @@
 
   const mapEl = document.getElementById('tripMap');
   let tripMap = null;
-  let mapInitialized = false;
-  function initMap() {
-    if (mapInitialized || !mapEl) return;
-    mapInitialized = true;
+  if (mapEl) {
     tripMap = L.map('tripMap', { scrollWheelZoom: false }).setView([42.34, -71.05], 9);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
