@@ -1,0 +1,372 @@
+/* ============================================================
+   The Midnight Gallery — a dark museum you wander in 2D
+   Each artwork sits in its own room. Arrow keys move you
+   up / down / left / right; rooms snap into place.
+   ============================================================ */
+
+:root {
+  --bg: #08080a;
+  --ink: #e8e3d8;        /* warm off-white text */
+  --muted: #6b6760;
+  --light: 255, 224, 170; /* warm bulb light (RGB for rgba) */
+  --cols: 3;              /* gallery width, in rooms */
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* ---- The room you stand in: a 2D scroll plane that snaps ---- */
+html, body { height: 100%; }
+body {
+  background:
+    radial-gradient(120% 80% at 50% -10%, #131217 0%, var(--bg) 55%),
+    var(--bg);
+  color: var(--ink);
+  font-family: 'Jost', 'Segoe UI', system-ui, sans-serif;
+  font-weight: 300;
+  -webkit-font-smoothing: antialiased;
+
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  scroll-snap-type: both mandatory;
+  scroll-behavior: smooth;
+  overscroll-behavior: none;
+}
+/* hide scrollbars — navigation is by arrow keys / swipe */
+body::-webkit-scrollbar { display: none; }
+body { scrollbar-width: none; }
+
+/* Soft vignette framing the whole room */
+.vignette {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 50;
+  background: radial-gradient(130% 100% at 50% 45%, transparent 52%, rgba(0,0,0,0.65) 100%);
+}
+/* faint plaster grain on the walls */
+.vignette::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+  opacity: 0.035;
+  mix-blend-mode: overlay;
+}
+
+/* ---- The plane of rooms ---- */
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), 100vw);
+  grid-auto-rows: 100vh;
+}
+
+.cell {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  scroll-snap-align: center;
+  outline: none;
+}
+
+/* ---------- Intro room ---------- */
+.intro { text-align: center; padding: 2rem 1.5rem; max-width: 40ch; }
+.eyebrow {
+  font-size: 0.78rem;
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 1.6rem;
+}
+.title {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-weight: 500;
+  font-size: clamp(2.8rem, 8vw, 6rem);
+  line-height: 1.02;
+  color: #f3eee2;
+  text-shadow: 0 0 50px rgba(var(--light), 0.12);
+}
+.subtitle {
+  margin: 1.4rem auto 0;
+  max-width: 30ch;
+  font-size: clamp(0.95rem, 2.4vw, 1.15rem);
+  color: #a39d90;
+  font-style: italic;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+}
+.nav-hint {
+  margin-top: 3rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  line-height: 2;
+}
+.keys { display: inline-flex; gap: 0.3rem; margin: 0 0.4rem; vertical-align: middle; }
+kbd {
+  display: inline-grid;
+  place-items: center;
+  width: 1.5rem; height: 1.5rem;
+  border: 1px solid #2a2823;
+  border-radius: 4px;
+  background: #121110;
+  color: #b8b2a4;
+  font-family: inherit;
+  font-size: 0.8rem;
+}
+
+/* ---------- An artwork on the wall ---------- */
+.piece {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 52px;            /* room for the picture light arching above */
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 1s var(--ease), transform 1s var(--ease);
+}
+.cell.in-view .piece { opacity: 1; transform: translateY(0); }
+
+/* Warm pool of light cast on the wall behind the frame */
+.wall-glow {
+  position: absolute;
+  top: 0; left: 50%;
+  width: 150%; height: 118%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(58% 50% at 50% 34%,
+     rgba(var(--light), 0.20) 0%,
+     rgba(var(--light), 0.09) 38%,
+     rgba(var(--light), 0) 70%);
+  filter: blur(26px);
+  opacity: 0;
+  transition: opacity 0.8s var(--ease);
+}
+
+/* The whole display sits in shadow until the light turns on */
+.display {
+  position: relative;
+  z-index: 2;
+  filter: brightness(0.26) saturate(0.78) contrast(0.96);
+  transition: filter 0.8s var(--ease);
+}
+
+/* Concentrated glow spilling from under the lamp shade */
+.lamp-glow {
+  position: absolute;
+  top: -30px; left: 50%;
+  width: clamp(150px, 40%, 240px);
+  height: 110px;
+  transform: translateX(-50%);
+  pointer-events: none;
+  z-index: 3;
+  background: radial-gradient(50% 55% at 50% 0%,
+     rgba(var(--light), 0.55) 0%,
+     rgba(var(--light), 0.18) 42%,
+     rgba(var(--light), 0) 76%);
+  filter: blur(12px);
+  opacity: 0;
+  transition: opacity 0.6s var(--ease);
+}
+
+/* --- Brass picture light arched over the frame --- */
+.picture-light {
+  position: absolute;
+  top: -44px; left: 50%;
+  transform: translateX(-50%);
+  width: clamp(118px, 32%, 186px);
+  z-index: 4;
+  filter: drop-shadow(0 6px 7px rgba(0,0,0,0.55));
+}
+.picture-light svg { display: block; width: 100%; height: auto; }
+.picture-light .emitter { opacity: 0; transition: opacity 0.6s var(--ease); }
+
+/* --- Gilded museum frame --- */
+.frame {
+  position: relative;
+  padding: clamp(13px, 2vh, 20px);
+  border-radius: 2px;
+  background-color: #9c7c38;
+  background-image:
+    linear-gradient(135deg, rgba(255,248,222,0) 42%, rgba(255,248,222,0.35) 50%, rgba(255,248,222,0) 58%),
+    linear-gradient(150deg, #f1d895 0%, #b78f3e 30%, #7c5f29 55%, #caa14c 78%, #8a6b2f 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,240,200,0.35),
+    inset 0 2px 2px rgba(255,248,220,0.45),
+    inset 0 -3px 6px rgba(60,40,10,0.55),
+    inset 6px 0 8px -6px rgba(255,245,215,0.40),
+    inset -6px 0 8px -6px rgba(40,25,5,0.50),
+    0 22px 45px -18px rgba(0,0,0,0.85);
+  transition: box-shadow 0.8s var(--ease);
+}
+/* recessed lip between the gilt and the mat */
+.rabbet {
+  padding: 4px;
+  background: linear-gradient(#3a2c12, #5a4520);
+  box-shadow: inset 0 0 6px rgba(0,0,0,0.7);
+}
+/* cream mat board with a beveled window */
+.mat {
+  position: relative;
+  padding: clamp(12px, 2.4vh, 24px);
+  background-color: #e9e2cf;
+  background-image: linear-gradient(160deg, #efe9d8, #ddd4bd);
+  box-shadow:
+    inset 0 0 0 1px #c8bfa5,
+    inset 0 0 16px rgba(120,108,80,0.25);
+}
+.art {
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 1px rgba(0,0,0,0.35),
+    inset 0 0 12px rgba(0,0,0,0.45);
+}
+.art img {
+  display: block;
+  height: min(60vh, 620px);
+  max-width: 80vw;
+  width: auto;
+  transform: scale(1.001);
+  transition: transform 1.2s var(--ease);
+}
+
+/* warm wash over the canvas — brightest at the top, like a real picture light */
+.wash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(to bottom,
+     rgba(var(--light), 0.30) 0%,
+     rgba(var(--light), 0.11) 45%,
+     rgba(var(--light), 0) 85%);
+  mix-blend-mode: screen;
+  opacity: 0;
+  transition: opacity 0.7s var(--ease);
+}
+/* faint glass sheen across the framed work */
+.glass {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(125deg,
+     rgba(255,255,255,0) 36%,
+     rgba(255,255,255,0.05) 47%,
+     rgba(255,255,255,0.10) 50%,
+     rgba(255,255,255,0) 62%);
+  opacity: 0;
+  transition: opacity 0.7s var(--ease);
+}
+
+/* ---- The light comes on (hover, keyboard focus, or tap) ---- */
+.piece:hover .display,
+.cell:focus-within .display,
+.piece.lit .display {
+  filter: brightness(1.04) saturate(1.05) contrast(1);
+}
+.piece:hover .wall-glow,
+.cell:focus-within .wall-glow,
+.piece.lit .wall-glow,
+.piece:hover .lamp-glow,
+.cell:focus-within .lamp-glow,
+.piece.lit .lamp-glow { opacity: 1; }
+
+.piece:hover .picture-light .emitter,
+.cell:focus-within .picture-light .emitter,
+.piece.lit .picture-light .emitter { opacity: 1; }
+
+.piece:hover .wash,
+.cell:focus-within .wash,
+.piece.lit .wash { opacity: 1; }
+.piece:hover .glass,
+.cell:focus-within .glass,
+.piece.lit .glass { opacity: 1; }
+
+.piece:hover .art img,
+.cell:focus-within .art img,
+.piece.lit .art img { transform: scale(1.012); }
+
+.piece:hover .frame,
+.cell:focus-within .frame,
+.piece.lit .frame {
+  box-shadow:
+    inset 0 0 0 1px rgba(255,243,205,0.50),
+    inset 0 2px 2px rgba(255,250,225,0.60),
+    inset 0 -3px 6px rgba(60,40,10,0.50),
+    inset 6px 0 8px -6px rgba(255,248,220,0.55),
+    inset -6px 0 8px -6px rgba(40,25,5,0.45),
+    0 30px 60px -16px rgba(0,0,0,0.90);
+}
+
+/* ---------- Caption ---------- */
+.caption {
+  margin-top: 1.4rem;
+  text-align: center;
+  opacity: 0.22;
+  transform: translateY(6px);
+  transition: opacity 0.7s var(--ease), transform 0.7s var(--ease);
+}
+.piece:hover .caption,
+.cell:focus-within .caption,
+.piece.lit .caption { opacity: 1; transform: translateY(0); }
+.caption h2 {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-weight: 500;
+  font-style: italic;
+  font-size: 1.45rem;
+  color: #f1ebdd;
+}
+.caption .meta {
+  margin-top: 0.35rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ---------- Minimap ---------- */
+.minimap {
+  position: fixed;
+  right: 1.6rem;
+  bottom: 1.6rem;
+  z-index: 60;
+  display: grid;
+  gap: 7px;
+  padding: 10px;
+  border: 1px solid #1a1916;
+  border-radius: 8px;
+  background: rgba(10, 10, 12, 0.5);
+  backdrop-filter: blur(6px);
+  opacity: 0.55;
+  transition: opacity 0.4s var(--ease);
+}
+.minimap:hover { opacity: 1; }
+.dot {
+  width: 9px; height: 9px;
+  padding: 0;
+  border: 1px solid #2c2a25;
+  border-radius: 50%;
+  background: #19181500;
+  cursor: pointer;
+  transition: background 0.35s var(--ease), box-shadow 0.35s var(--ease), border-color 0.35s var(--ease);
+}
+.dot.filled { border-color: #3a3833; background: #2a2823; }
+.dot.empty { border-color: transparent; cursor: default; }
+.dot.current {
+  background: rgb(var(--light));
+  border-color: rgb(var(--light));
+  box-shadow: 0 0 8px 2px rgba(var(--light), 0.7);
+}
+
+/* ---------- Accessibility ---------- */
+@media (prefers-reduced-motion: reduce) {
+  * { transition-duration: 0.001ms !important; animation: none !important; }
+  body { scroll-behavior: auto; }
+  .piece { opacity: 1; transform: none; }
+}

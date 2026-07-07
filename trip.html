@@ -1,0 +1,1448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Massachusetts Historical Travel Guide</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+  <style>
+    :root {
+      --navy: #1a2238;
+      --cream: #f5f0e8;
+      --warm: #e8d5b7;
+      --accent: #9d4e3c;
+      --accent-light: #c66a52;
+      --gold: #b8933b;
+      --text: #2c2418;
+      --text-light: #6b5d4c;
+      --muted: #9a8e7e;
+      --card-bg: #ffffff;
+      --shadow: rgba(26, 34, 56, 0.08);
+      --radius: 12px;
+      --max-w: 1100px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--cream);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+    h1, h2, h3, h4 { font-family: 'Playfair Display', Georgia, serif; font-weight: 600; line-height: 1.2; }
+    a { color: var(--accent); text-decoration: none; transition: color 0.2s; }
+    a:hover { color: var(--accent-light); }
+    img { max-width: 100%; display: block; }
+    button { cursor: pointer; }
+
+    /* Nav */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(26, 34, 56, 0.95); backdrop-filter: blur(12px);
+      padding: 0 1.5rem; height: 56px;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    nav .brand { font-family: 'Playfair Display', Georgia, serif; font-size: 1.1rem; color: var(--cream); letter-spacing: 0.02em; }
+    nav .brand span { color: var(--gold); }
+    nav .days-nav { display: flex; gap: 0.35rem; overflow-x: auto; scrollbar-width: none; padding: 0 0.5rem; flex: 1; justify-content: flex-end; }
+    nav .days-nav::-webkit-scrollbar { display: none; }
+    nav .days-nav a {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 32px; height: 32px; border-radius: 50%;
+      font-size: 0.75rem; font-weight: 500;
+      color: rgba(255,255,255,0.5); background: transparent;
+      transition: all 0.2s; flex-shrink: 0; text-decoration: none;
+    }
+    nav .days-nav a:hover, nav .days-nav a.active { color: var(--cream); background: var(--accent); }
+
+    /* Hero */
+    .hero {
+      margin-top: 56px;
+      background: linear-gradient(135deg, var(--navy) 0%, #2a3a5c 50%, #3d4f72 100%);
+      color: var(--cream); padding: 5rem 1.5rem 4rem; text-align: center;
+      position: relative; overflow: hidden;
+    }
+    .hero::after {
+      content: ''; position: absolute; inset: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 5L35 20H50L38 30L42 45L30 36L18 45L22 30L10 20H25Z' fill='rgba(255,255,255,0.03)'/%3E%3C/svg%3E") repeat;
+      opacity: 0.3;
+    }
+    .hero-content { position: relative; z-index: 1; max-width: 700px; margin: 0 auto; }
+    .hero h1 { font-size: clamp(2.2rem, 6vw, 3.6rem); margin-bottom: 0.5rem; }
+    .hero .subtitle { font-size: 1.1rem; color: var(--warm); font-weight: 300; margin-bottom: 1.5rem; }
+    .hero .meta { display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap; font-size: 0.85rem; color: rgba(255,255,255,0.6); }
+    .hero .meta span { display: flex; align-items: center; gap: 0.4rem; }
+
+    /* Overview Map */
+    .map-overview { padding: 4rem 0; background: var(--cream); }
+    .map-overview h2 { text-align: center; font-family: 'Playfair Display', serif; font-size: clamp(1.5rem, 3vw, 2rem); color: var(--navy); margin-bottom: 0.5rem; }
+    .map-overview .subtitle { text-align: center; color: var(--text-light); font-size: 0.9rem; margin-bottom: 2rem; }
+    #tripMap { height: 520px; border-radius: var(--radius); box-shadow: 0 4px 24px rgba(0,0,0,0.1); border: 2px solid var(--warm); }
+    .map-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.75rem 1.5rem; margin-top: 1.25rem; }
+    .map-legend-item { display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; font-weight: 500; color: var(--text-light); }
+    .map-legend-dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.8); box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+    .leaflet-popup-content { font-family: 'Inter', sans-serif; font-size: 0.85rem; }
+    .leaflet-popup-content strong { color: var(--navy); }
+
+    /* Container */
+    .container { max-width: var(--max-w); margin: 0 auto; padding: 0 1.5rem; }
+
+    /* Day Sections */
+    .day-section { padding: 4rem 0; border-bottom: 1px solid rgba(0,0,0,0.06); }
+    .day-section:last-of-type { border-bottom: none; }
+    .day-header { margin-bottom: 2.5rem; position: relative; }
+    .day-header .day-number {
+      display: inline-flex; align-items: center; gap: 0.75rem;
+      font-size: 0.8rem; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.15em; color: var(--accent); margin-bottom: 0.5rem;
+    }
+    .day-header .day-number::before { content: ''; width: 2rem; height: 2px; background: var(--accent); }
+    .day-header h2 { font-size: clamp(1.5rem, 3vw, 2rem); color: var(--navy); }
+    .day-header .day-date { font-size: 0.9rem; color: var(--text-light); margin-top: 0.3rem; }
+    .day-summary {
+      background: rgba(154, 142, 126, 0.08); border-left: 3px solid var(--gold);
+      padding: 1rem 1.25rem; border-radius: 0 var(--radius) var(--radius) 0;
+      margin-top: 1rem; font-size: 0.95rem; color: var(--text-light);
+    }
+
+    /* Events Grid */
+    .events-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; }
+
+    /* Event Card (clickable) */
+    .event-card {
+      background: var(--card-bg); border-radius: var(--radius); overflow: hidden;
+      box-shadow: 0 2px 12px var(--shadow);
+      transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s;
+      cursor: pointer;
+    }
+    .event-card:hover { transform: translateY(-4px); box-shadow: 0 8px 30px rgba(26, 34, 56, 0.12); }
+    .event-card .card-img { height: 180px; overflow: hidden; background: var(--warm); position: relative; }
+    .event-card .card-img img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
+    .event-card:hover .card-img img { transform: scale(1.05); }
+    .event-card .card-img .img-placeholder {
+      width: 100%; height: 100%;
+      display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, var(--navy), var(--accent));
+      color: var(--cream); font-family: 'Playfair Display', Georgia, serif;
+      font-size: 2rem; font-style: italic; opacity: 0.6;
+    }
+    .event-card .card-body { padding: 1.25rem; }
+    .event-card .card-body h3 { font-size: 1.1rem; color: var(--navy); margin-bottom: 0.4rem; }
+    .event-card .card-body .summary {
+      font-size: 0.88rem; color: var(--text-light); margin-bottom: 0.75rem; line-height: 1.5;
+    }
+    .event-card .card-body .details { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-bottom: 0.75rem; }
+    .event-card .card-body .details .tag {
+      font-size: 0.72rem; padding: 0.2rem 0.6rem; border-radius: 4px;
+      background: rgba(154, 142, 126, 0.1); color: var(--text-light); white-space: nowrap;
+    }
+    .event-card .card-body .details .tag.admission { background: rgba(157, 78, 60, 0.1); color: var(--accent); }
+    .event-card .card-body .details .tag.free { background: rgba(76, 142, 100, 0.1); color: #2d6b42; }
+    .event-card .card-body .links { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+    .event-card .card-body .links a {
+      font-size: 0.78rem; display: inline-flex; align-items: center; gap: 0.3rem;
+      padding: 0.3rem 0.7rem; border-radius: 6px;
+      border: 1px solid rgba(157, 78, 60, 0.2); transition: all 0.2s;
+    }
+    .event-card .card-body .links a:hover { background: var(--accent); color: white; border-color: var(--accent); }
+
+    /* "Learn more" hint */
+    .learn-more-hint {
+      font-size: 0.72rem; color: var(--muted); margin-top: 0.5rem; font-style: italic;
+      display: flex; align-items: center; gap: 0.3rem;
+    }
+
+    /* Comment Section per Event */
+    .comments-section { margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid rgba(0,0,0,0.06); }
+    .comments-section .comment-form { display: flex; gap: 0.5rem; margin-bottom: 0.5rem; }
+    .comments-section .comment-form input {
+      flex: 1; padding: 0.45rem 0.7rem; border: 1px solid rgba(0,0,0,0.1);
+      border-radius: 6px; font-family: 'Inter', sans-serif; font-size: 0.8rem;
+      outline: none; transition: border-color 0.2s;
+    }
+    .comments-section .comment-form input:focus { border-color: var(--accent); }
+    .comments-section .comment-form button {
+      padding: 0.45rem 0.9rem; background: var(--accent); color: white;
+      border: none; border-radius: 6px; font-size: 0.78rem; font-weight: 500;
+      cursor: pointer; transition: background 0.2s; white-space: nowrap;
+    }
+    .comments-section .comment-form button:hover { background: var(--accent-light); }
+    .comments-list { display: flex; flex-direction: column; gap: 0.35rem; max-height: 160px; overflow-y: auto; }
+    .comments-list::-webkit-scrollbar { width: 4px; }
+    .comments-list::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 2px; }
+    .comment-item {
+      font-size: 0.78rem; padding: 0.35rem 0.6rem;
+      background: rgba(154, 142, 126, 0.06); border-radius: 4px;
+      display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem;
+    }
+    .comment-item .comment-text { flex: 1; color: var(--text); }
+    .comment-item .comment-time { font-size: 0.65rem; color: var(--muted); white-space: nowrap; }
+    .comment-item .delete-comment {
+      background: none; border: none; color: var(--muted); cursor: pointer;
+      font-size: 0.7rem; padding: 0.1rem 0.3rem; border-radius: 3px;
+      transition: all 0.15s; opacity: 0.4;
+    }
+    .comment-item .delete-comment:hover { color: var(--accent); background: rgba(157,78,60,0.1); opacity: 1; }
+    .no-comments { font-size: 0.75rem; color: var(--muted); font-style: italic; }
+    .event-card .card-body .day-note { font-size: 0.88rem; color: var(--text-light); font-style: italic; margin-bottom: 0.75rem; }
+
+    /* MODAL */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(0,0,0,0.6); backdrop-filter: blur(6px);
+      display: none; align-items: center; justify-content: center;
+      padding: 1.5rem; overflow-y: auto;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--card-bg); border-radius: 16px;
+      max-width: 780px; width: 100%; max-height: 90vh; overflow-y: auto;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.3);
+      animation: modalIn 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    @keyframes modalIn { from { opacity: 0; transform: translateY(30px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    .modal::-webkit-scrollbar { width: 6px; }
+    .modal::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 3px; }
+    .modal-img { width: 100%; height: 320px; overflow: hidden; background: var(--warm); position: relative; }
+    .modal-img img { width: 100%; height: 100%; object-fit: cover; }
+    .modal-img .img-placeholder {
+      width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, var(--navy), var(--accent));
+      color: var(--cream); font-family: 'Playfair Display', Georgia, serif;
+      font-size: 3rem; font-style: italic; opacity: 0.6;
+    }
+    .modal-close {
+      position: absolute; top: 1rem; right: 1rem; z-index: 10;
+      width: 40px; height: 40px; border-radius: 50%; border: none;
+      background: rgba(0,0,0,0.5); color: white; font-size: 1.3rem;
+      display: grid; place-items: center; transition: background 0.2s;
+    }
+    .modal-close:hover { background: rgba(0,0,0,0.8); }
+    .modal-body { padding: 2rem; }
+    .modal-body h2 { font-size: 1.6rem; color: var(--navy); margin-bottom: 0.3rem; }
+    .modal-body .modal-meta { font-size: 0.85rem; color: var(--text-light); margin-bottom: 1.25rem; display: flex; gap: 1rem; flex-wrap: wrap; }
+    .modal-body .modal-meta span { display: flex; align-items: center; gap: 0.3rem; }
+    .modal-body .modal-meta .map-link { color: var(--accent); }
+    .modal-body h3 { font-size: 1.1rem; color: var(--navy); margin: 1.5rem 0 0.5rem; }
+    .modal-body .modal-summary { font-size: 0.95rem; color: var(--text); line-height: 1.7; }
+    .modal-body .primary-sources { list-style: none; padding: 0; }
+    .modal-body .primary-sources li {
+      padding: 0.6rem 0; border-bottom: 1px solid rgba(0,0,0,0.05);
+      display: flex; gap: 0.75rem; align-items: flex-start;
+    }
+    .modal-body .primary-sources li:last-child { border-bottom: none; }
+    .modal-body .primary-sources li .source-icon {
+      flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%;
+      background: rgba(157, 78, 60, 0.1); color: var(--accent);
+      display: grid; place-items: center; font-size: 0.75rem; font-weight: 600; margin-top: 1px;
+    }
+    .modal-body .primary-sources li .source-text { font-size: 0.88rem; }
+    .modal-body .primary-sources li .source-text a { font-weight: 500; }
+
+    /* Footer */
+    footer {
+      background: var(--navy); color: rgba(255,255,255,0.5);
+      text-align: center; padding: 2rem 1.5rem; font-size: 0.8rem;
+    }
+    footer a { color: var(--gold); }
+
+    /* Scroll to top */
+    .scroll-top {
+      position: fixed; bottom: 2rem; right: 2rem; z-index: 90;
+      width: 44px; height: 44px; border-radius: 50%;
+      background: var(--accent); color: white; border: none; font-size: 1.2rem;
+      cursor: pointer; box-shadow: 0 4px 14px rgba(157, 78, 60, 0.3);
+      transition: all 0.25s; opacity: 0; pointer-events: none;
+      display: grid; place-items: center;
+    }
+    .scroll-top.visible { opacity: 1; pointer-events: auto; }
+    .scroll-top:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(157, 78, 60, 0.4); }
+
+    /* Responsive */
+    @media (max-width: 700px) {
+      nav { padding: 0 0.75rem; }
+      nav .brand { font-size: 0.9rem; }
+      nav .days-nav { gap: 0.25rem; }
+      nav .days-nav a { min-width: 28px; height: 28px; font-size: 0.7rem; }
+      .events-grid { grid-template-columns: 1fr; }
+      .hero { padding: 3rem 1rem 2.5rem; }
+      .hero .meta { gap: 1rem; font-size: 0.78rem; }
+      .day-section { padding: 2.5rem 0; }
+      .comment-item { flex-wrap: wrap; }
+      .modal-body { padding: 1.25rem; }
+      .modal-img { height: 220px; }
+      .modal-body h2 { font-size: 1.3rem; }
+    }
+    @media (min-width: 701px) and (max-width: 900px) {
+      .events-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="brand">Mass <span>History</span></div>
+  <div class="days-nav">
+    <a href="#day-1">1</a><a href="#day-2">2</a><a href="#day-3">3</a><a href="#day-4">4</a>
+    <a href="#day-5">5</a><a href="#day-6">6</a><a href="#day-7">7</a><a href="#day-8">8</a><a href="#day-9">9</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-content">
+    <h1>Massachusetts History Tour</h1>
+    <p class="subtitle">Revolutionary War sites, literary landmarks, museums &amp; Plymouth Colony</p>
+    <div class="meta">
+      <span>Oct 3 &ndash; Oct 11, 2026</span><span>9 Days</span><span>Boston &rarr; Concord &rarr; Deerfield &rarr; Plymouth</span>
+    </div>
+  </div>
+</section>
+
+<!-- ===== OVERVIEW MAP ===== -->
+<section class="map-overview">
+  <div class="container">
+    <h2>Route Overview</h2>
+    <p class="subtitle">Each day's locations connected by color — click a pin for details</p>
+    <div id="tripMap"></div>
+    <div class="map-legend" id="mapLegend"></div>
+  </div>
+</section>
+
+<!-- ===== DAY 1 ===== -->
+<section class="day-section" id="day-1">
+  <div class="container">
+    <div class="day-header">
+      <div class="day-number">Day 1</div>
+      <h2>Arrival in Boston</h2>
+      <div class="day-date">Saturday, October 3, 2026</div>
+      <div class="day-summary">Fly into Boston Logan, pick up a rental car, and settle into your hotel. Rest up for a week of history ahead.</div>
+    </div>
+    <div class="events-grid">
+      <div class="event-card" onclick="openModal('boston-logan')">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/fe/Boston_Logan_International_Airport_-_Terminal_A_%28cropped%29.jpg/960px-Boston_Logan_International_Airport_-_Terminal_A_%28cropped%29.jpg" alt="Boston Logan International Airport" loading="lazy" onerror="this.parentElement.innerHTML='<div class=img-placeholder>BOS</div>'">
+        </div>
+        <div class="card-body">
+          <h3>Boston Logan International Airport</h3>
+          <p class="summary">Primary airport serving the Boston metro area. After landing, proceed to baggage claim and rental car center.</p>
+          <div class="details"><span class="tag">Arrival</span></div>
+          <div class="links">
+            <a href="https://www.massport.com/logan-airport" target="_blank" rel="noopener" onclick="event.stopPropagation()">Website</a>
+            <a href="https://www.google.com/maps/search/?api=1&query=Boston+Logan+International+Airport+Boston+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
+          </div>
+          <div class="learn-more-hint">Click for history &amp; primary sources</div>
+          <div class="comments-section" data-site="boston-logan" onclick="event.stopPropagation()">
+            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
+            <div class="comments-list"></div>
+          </div>
+        </div>
+      </div>
+      <div class="event-card">
+        <div class="card-img"><div class="img-placeholder">&#9881;</div></div>
+        <div class="card-body">
+          <h3>Rental Car &amp; Hotel</h3>
+          <p class="day-note">Pick up rental car at Logan Airport. Check into your hotel in the greater Boston area.</p>
+          <div class="comments-section" data-site="arrival-logistics" onclick="event.stopPropagation()">
+            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
+            <div class="comments-list"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== DAY 2 ===== -->
+<section class="day-section" id="day-2">
+  <div class="container">
+    <div class="day-header">
+      <div class="day-number">Day 2</div>
+      <h2>Lexington &amp; Concord &mdash; Revolutionary Sites</h2>
+      <div class="day-date">Sunday, October 4, 2026</div>
+      <div class="day-summary">Walk the opening battlefields of the American Revolution. Follow the route from Lexington Green to the "shot heard round the world" at Old North Bridge.</div>
+    </div>
+    <div class="events-grid">
+      <div class="event-card" onclick="openModal('lexington-green')">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/fc/Lexington_Battle_Green%2C_Lexington_MA.jpg/960px-Lexington_Battle_Green%2C_Lexington_MA.jpg" alt="Lexington Battle Green" loading="lazy" onerror="this.parentElement.innerHTML='<div class=img-placeholder>LG</div>'">
+        </div>
+        <div class="card-body">
+          <h3>Lexington Green</h3>
+          <p class="summary">Opening battle site of the American Revolution on April 19, 1775. The common where 77 minutemen faced 700 British regulars.</p>
+          <div class="details"><span class="tag">30&ndash;45 min</span><span class="tag free">Free</span></div>
+          <div class="links">
+            <a href="https://www.lexingtonhistory.org" target="_blank" rel="noopener" onclick="event.stopPropagation()">Source</a>
+            <a href="https://www.google.com/maps/search/?api=1&query=Lexington+Green+Lexington+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
+          </div>
+          <div class="learn-more-hint">Click for history &amp; primary sources</div>
+          <div class="comments-section" data-site="lexington-green" onclick="event.stopPropagation()">
+            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
+            <div class="comments-list"></div>
+          </div>
+        </div>
+      </div>
+      <div class="event-card" onclick="openModal('buckman-tavern')">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Buckman_Tavern_1.jpg/960px-Buckman_Tavern_1.jpg" alt="Buckman Tavern" loading="lazy" onerror="this.parentElement.innerHTML='<div class=img-placeholder>BT</div>'">
+        </div>
+        <div class="card-body">
+          <h3>Buckman Tavern</h3>
+          <p class="summary">Militia gathering place before the Battle of Lexington. The oldest building in Lexington still used as a tavern.</p>
+          <div class="details"><span class="tag">45&ndash;60 min</span><span class="tag admission">Admission</span></div>
+          <div class="links">
+            <a href="https://www.battlefields.org/visit/heritage-sites/buckman-tavern" target="_blank" rel="noopener" onclick="event.stopPropagation()">Source</a>
+            <a href="https://www.google.com/maps/search/?api=1&query=Buckman+Tavern+Lexington+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
+          </div>
+          <div class="learn-more-hint">Click for history &amp; primary sources</div>
+          <div class="comments-section" data-site="buckman-tavern" onclick="event.stopPropagation()">
+            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
+            <div class="comments-list"></div>
+          </div>
+        </div>
+      </div>
+      <div class="event-card" onclick="openModal('hancock-clarke')">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Hancock-Clarke_House%2C_Lexington_MA.jpg/960px-Hancock-Clarke_House%2C_Lexington_MA.jpg" alt="Hancock-Clarke House" loading="lazy" onerror="this.parentElement.innerHTML='<div class=img-placeholder>HC</div>'">
+        </div>
+        <div class="card-body">
+          <h3>Hancock-Clarke House</h3>
+          <p class="summary">Paul Revere warned Samuel Adams and John Hancock here on the night of April 18, 1775. A key moment in the Revolution.</p>
+          <div class="details"><span class="tag">45&ndash;60 min</span><span class="tag admission">Admission</span></div>
+          <div class="links">
+            <a href="https://www.lexingtonhistory.org/hancock-clarke-house" target="_blank" rel="noopener" onclick="event.stopPropagation()">Source</a>
+            <a href="https://www.google.com/maps/search/?api=1&query=Hancock+Clarke+House+Lexington+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
+          </div>
+          <div class="learn-more-hint">Click for history &amp; primary sources</div>
+          <div class="comments-section" data-site="hancock-clarke" onclick="event.stopPropagation()">
+            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
+            <div class="comments-list"></div>
+          </div>
+        </div>
+      </div>
+      <div class="event-card" onclick="openModal('battle-road')">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Battle_Road_Trail_boardwalk%2C_Lincoln_MA.jpg/960px-Battle_Road_Trail_boardwalk%2C_Lincoln_MA.jpg" alt="Battle Road Trail boardwalk" loading="lazy" onerror="this.parentElement.innerHTML='<div class=img-placeholder>BR</div>'">
+        </div>
+        <div class="card-body">
+          <h3>Battle Road Trail</h3>
+          <p class="summary">Historic 5-mile route of the British retreat to Charlestown. Walk or drive segments through Minute Man National Historical Park.</p>
+          <div class="details"><span class="tag">2&ndash;3 hrs</span><span class="tag free">Free</span></div>
+          <div class="links">
+            <a href="https://www.nps.gov/mima" target="_blank" rel="noopener" onclick="event.stopPropagation()">Source</a>
+            <a href="https://www.google.com/maps/search/?api=1&query=Battle+Road+Trail+Minute+Man+NHP+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
+          </div>
+          <div class="learn-more-hint">Click for history &amp; primary sources</div>
+          <div class="comments-section" data-site="battle-road" onclick="event.stopPropagation()">
+            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
+            <div class="comments-list"></div>
+          </div>
+        </div>
+      </div>
+      <div class="event-card" onclick="openModal('hartwell-tavern')">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Hartwell_Tavern_1.jpeg/960px-Hartwell_Tavern_1.jpeg" alt="Hartwell Tavern" loading="lazy" onerror="this.parentElement.innerHTML='<div class=img-placeholder>HT</div>'">
+        </div>
+        <div class="card-body">
+          <h3>Hartwell Tavern</h3>
+          <p class="summary">Restored 18th-century tavern that served as a waypoint along Battle Road. Living history demonstrations in season.</p>
+          <div class="details"><span class="tag">30&ndash;45 min</span><span class="tag free">Free</span></div>
+          <div class="links">
+            <a href="https://www.nps.gov/mima/hartwell-tavern.htm" target="_blank" rel="noopener" onclick="event.stopPropagation()">Source</a>
+            <a href="https://www.google.com/maps/search/?api=1&query=Hartwell+Tavern+Minute+Man+NHP+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
+          </div>
+          <div class="learn-more-hint">Click for history &amp; primary sources</div>
+          <div class="comments-section" data-site="hartwell-tavern" onclick="event.stopPropagation()">
+            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
+            <div class="comments-list"></div>
+          </div>
+        </div>
+      </div>
+      <div class="event-card" onclick="openModal('old-north-bridge')">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/Old_North_Bridge%2C_Concord_MA.jpg/960px-Old_North_Bridge%2C_Concord_MA.jpg" alt="Old North Bridge over the Concord River" loading="lazy" onerror="this.parentElement.innerHTML='<div class=img-placeholder>ONB</div>'">
+        </div>
+        <div class="card-body">
+          <h3>Old North Bridge</h3>
+          <p class="summary">Site of the "shot heard round the world." The iconic span where colonial militia engaged British troops on April 19, 1775.</p>
+          <div class="details"><span class="tag">30&ndash;60 min</span><span class="tag free">Free</span></div>
+          <div class="links">
+            <a href="https://www.nps.gov/mima" target="_blank" rel="noopener" onclick="event.stopPropagation()">Source</a>
+            <a href="https://www.google.com/maps/search/?api=1&query=Old+North+Bridge+Concord+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
+          </div>
+          <div class="learn-more-hint">Click for history &amp; primary sources</div>
+          <div class="comments-section" data-site="old-north-bridge" onclick="event.stopPropagation()">
+            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
+            <div class="comments-list"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== DAY 3 ===== -->
+<section class="day-section" id="day-3">
+  <div class="container">
+    <div class="day-header">
+      <div class="day-number">Day 3</div>
+      <h2>Concord Literary Sites</h2>
+      <div class="day-date">Monday, October 5, 2026</div>
+      <div class="day-summary">Follow in the footsteps of Emerson, Hawthorne, Alcott, and Thoreau. Explore the homes and landscapes that inspired American literary masterpieces.</div>
+    </div>
+    <div class="events-grid">
+      <div class="event-card" onclick="openModal('old-manse')">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/cc/Old_Manse%2C_Concord_MA_-_HABS_080260pu.jpg/960px-Old_Manse%2C_Concord_MA_-_HABS_080260pu.jpg" alt="The Old Manse, Concord" loading="lazy" onerror="this.parentElement.innerHTML='<div class=img-placeholder>OM</div>'">
+        </div>
+        <div class="card-body">
+          <h3>Old Manse</h3>
+          <p class="summary">Linked to Ralph Waldo Emerson and Nathaniel Hawthorne. Overlooks the Concord River and Old North Bridge.</p>
+          <div class="details"><span class="tag">60&ndash;90 min</span><span class="tag admission">Tour Admission</span></div>
+          <div class="links">
+            <a href="https://thetrustees.org/place/the-old-manse/" target="_blank" rel="noopener" onclick="event.stopPropagation()">Source</a>
+            <a href="https://www.google.com/maps/search/?api=1&query=Old+Manse+Concord+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
+          </div>
+          <div class="learn-more-hint">Click for history &amp; primary sources</div>
+          <div class="comments-section" data-site="old-manse" onclick="event.stopPropagation()">
+            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
+            <div class="comments-list"></div>
+          </div>
+        </div>
+      </div>
+      <div class="event-card" onclick="openModal('orchard-house')">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/56/Louisa_May_Alcott%27s_%22Orchard_House%2C%22_Lexington_Road%2C_Concord%2C_Mass._-_DPLA_-_b410987702551403d85d2f73250000a1.jpg/960px-Louisa_May_Alcott%27s_%22Orchard_House%2C%22_Lexington_Road%2C_Concord%2C_Mass._-_DPLA_-_b410987702551403d85d2f73250000a1.jpg" alt="Orchard House, home of Louisa May Alcott" loading="lazy" onerror="this.parentElement.innerHTML='<div class=img-placeholder>OA</div>'">
+        </div>
+        <div class="card-body">
+          <h3>Orchard House</h3>
+          <p class="summary">Louisa May Alcott wrote Little Women here. The family home of the Alcotts is preserved with original furnishings.</p>
+          <div class="details"><span class="tag">60&ndash;90 min</span><span class="tag admission">Admission</span></div>
+          <div class="links">
+            <a href="https://louisamayalcott.org" target="_blank" rel="noopener" onclick="event.stopPropagation()">Source</a>
+            <a href="https://www.google.com/maps/search/?api=1&query=Orchard+House+Concord+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
+          </div>
+          <div class="learn-more-hint">Click for history &amp; primary sources</div>
+          <div class="comments-section" data-site="orchard-house" onclick="event.stopPropagation()">
+            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
+            <div class="comments-list"></div>
+          </div>
+        </div>
+      </div>
+      <div class="event-card" onclick="openModal('sleepy-hollow')">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Sleepy_Hollow_Cemetery_in_Concord%2C_Mass_2012-0083.jpg/960px-Sleepy_Hollow_Cemetery_in_Concord%2C_Mass_2012-0083.jpg" alt="Sleepy Hollow Cemetery" loading="lazy" onerror="this.parentElement.innerHTML='<div class=img-placeholder>SH</div>'">
+        </div>
+        <div class="card-body">
+          <h3>Sleepy Hollow Cemetery</h3>
+          <p class="summary">Authors Ridge burial location of Emerson, Thoreau, Hawthorne, and the Alcotts. A peaceful wooded cemetery.</p>
+          <div class="details"><span class="tag">45&ndash;60 min</span><span class="tag free">Free</span></div>
+          <div class="links">
+            <a href="https://concordma.gov/1956/Sleepy-Hollow-Cemetery" target="_blank" rel="noopener" onclick="event.stopPropagation()">Source</a>
+            <a href="https://www.google.com/maps/search/?api=1&query=Sleepy+Hollow+Cemetery+Concord+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
+          </div>
+          <div class="learn-more-hint">Click for history &amp; primary sources</div>
+          <div class="comments-section" data-site="sleepy-hollow" onclick="event.stopPropagation()">
+            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
+            <div class="comments-list"></div>
+          </div>
+        </div>
+      </div>
+      <div class="event-card" onclick="openModal('walden-pond')">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/Walden_Pond_State_Reservation_-_Concord%2C_Massachusetts%2C_May_15%2C_2010.jpg/960px-Walden_Pond_State_Reservation_-_Concord%2C_Massachusetts%2C_May_15%2C_2010.jpg" alt="Walden Pond State Reservation" loading="lazy" onerror="this.parentElement.innerHTML='<div class=img-placeholder>WP</div>'">
+        </div>
+        <div class="card-body">
+          <h3>Walden Pond</h3>
+          <p class="summary">Thoreau's famous retreat where he lived for two years and wrote Walden. A preserved state reservation for swimming, hiking, and reflection.</p>
+          <div class="details"><span class="tag">1.5&ndash;3 hrs</span><span class="tag admission">State fee may apply</span></div>
+          <div class="links">
+            <a href="https://www.mass.gov/locations/walden-pond-state-reservation" target="_blank" rel="noopener" onclick="event.stopPropagation()">Source</a>
+            <a href="https://www.google.com/maps/search/?api=1&query=Walden+Pond+Concord+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
+          </div>
+          <div class="learn-more-hint">Click for history &amp; primary sources</div>
+          <div class="comments-section" data-site="walden-pond" onclick="event.stopPropagation()">
+            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
+            <div class="comments-list"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== DAY 4 ===== -->
+<section class="day-section" id="day-4">
+  <div class="container">
+    <div class="day-header">
+      <div class="day-number">Day 4</div>
+      <h2>Deerfield &amp; South Shore</h2>
+      <div class="day-date">Tuesday, October 6, 2026</div>
+      <div class="day-summary">Travel west to Historic Deerfield, a preserved colonial village. On the way back, stop at Quincy or Nantasket Beach along the South Shore.</div>
+    </div>
+    <div class="events-grid">
+      <div class="event-card" onclick="openModal('historic-deerfield')">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f7/Deerfield_MA_IMG_1460.jpg/960px-Deerfield_MA_IMG_1460.jpg" alt="Historic Deerfield street" loading="lazy" onerror="this.parentElement.innerHTML='<div class=img-placeholder>HD</div>'">
+        </div>
+        <div class="card-body">
+          <h3>Historic Deerfield</h3>
+          <p class="summary">A meticulously preserved colonial village with 12 museum houses along a mile-long tree-lined street. One of the finest collections of early American decorative arts.</p>
+          <div class="details"><span class="tag">3&ndash;5 hrs</span><span class="tag admission">Museum Admission</span></div>
+          <div class="links">
+            <a href="https://www.historic-deerfield.org" target="_blank" rel="noopener" onclick="event.stopPropagation()">Source</a>
+            <a href="https://www.google.com/maps/search/?api=1&query=Historic+Deerfield+Deerfield+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
+          </div>
+          <div class="learn-more-hint">Click for history &amp; primary sources</div>
+          <div class="comments-section" data-site="historic-deerfield" onclick="event.stopPropagation()">
+            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
+            <div class="comments-list"></div>
+          </div>
+        </div>
+      </div>
+      <div class="event-card" onclick="openModal('nantasket-beach')">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Nantasket_beach_tide_pools.jpg/960px-Nantasket_beach_tide_pools.jpg" alt="Nantasket Beach tide pools" loading="lazy" onerror="this.parentElement.innerHTML='<div class=img-placeholder>NB</div>'">
+        </div>
+        <div class="card-body">
+          <h3>Quincy / Nantasket Beach</h3>
+          <p class="summary">Historic South Shore beach destination in Hull, MA. A relaxing stop on the return from Deerfield with ocean views and a historic boardwalk.</p>
+          <div class="details"><span class="tag">2&ndash;6 hrs</span><span class="tag free">Free</span></div>
+          <div class="links">
+            <a href="https://www.hull-ma.gov" target="_blank" rel="noopener" onclick="event.stopPropagation()">Source</a>
+            <a href="https://www.google.com/maps/search/?api=1&query=Nantasket+Beach+Hull+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
+          </div>
+          <div class="learn-more-hint">Click for history &amp; primary sources</div>
+          <div class="comments-section" data-site="nantasket-beach" onclick="event.stopPropagation()">
+            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
+            <div class="comments-list"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== DAY 5 ===== -->
+<section class="day-section" id="day-5">
+  <div class="container">
+    <div class="day-header">
+      <div class="day-number">Day 5</div>
+      <h2>Boston Museums &amp; Historic Boston</h2>
+      <div class="day-date">Wednesday, October 7, 2026</div>
+      <div class="day-summary">A day of world-class museums: the intimate Venetian-style Gardner Museum and the encyclopedic MFA. Cap it off with Beacon Hill and Bunker Hill.</div>
+    </div>
+    <div class="events-grid">
+      <div class="event-card" onclick="openModal('gardner-museum')">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Isabella-Stewart-Gardner-Museum-Courtyard-01.jpg/960px-Isabella-Stewart-Gardner-Museum-Courtyard-01.jpg" alt="Isabella Stewart Gardner Museum courtyard" loading="lazy" onerror="this.parentElement.innerHTML='<div class=img-placeholder>ISGM</div>'">
+        </div>
+        <div class="card-body">
+          <h3>Isabella Stewart Gardner Museum</h3>
+          <p class="summary">Venetian-style palace museum built around a stunning courtyard garden. Home to a world-famous art collection and site of the infamous 1990 art heist.</p>
+          <div class="details"><span class="tag">2&ndash;3 hrs</span><span class="tag admission">Museum Admission</span></div>
+          <div class="links">
+            <a href="https://www.gardnermuseum.org" target="_blank" rel="noopener" onclick="event.stopPropagation()">Source</a>
+            <a href="https://www.google.com/maps/search/?api=1&query=Isabella+Stewart+Gardner+Museum+Boston+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
+          </div>
+          <div class="learn-more-hint">Click for history &amp; primary sources</div>
+          <div class="comments-section" data-site="gardner-museum" onclick="event.stopPropagation()">
+            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
+            <div class="comments-list"></div>
+          </div>
+        </div>
+      </div>
+      <div class="event-card" onclick="openModal('mfa-boston')">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/2018_Museum_of_Fine_Arts_Boston_Huntington_Avenue_facade_from_east.jpg/960px-2018_Museum_of_Fine_Arts_Boston_Huntington_Avenue_facade_from_east.jpg" alt="Museum of Fine Arts Boston" loading="lazy" onerror="this.parentElement.innerHTML='<div class=img-placeholder>MFA</div>'">
+        </div>
+        <div class="card-body">
+          <h3>Museum of Fine Arts Boston</h3>
+          <p class="summary">One of the premier art museums in America with encyclopedic collections spanning Egyptian antiquities to contemporary works. Home to an exceptional Impressionist collection.</p>
+          <div class="details"><span class="tag">3&ndash;5 hrs</span><span class="tag admission">Museum Admission</span></div>
+          <div class="links">
+            <a href="https://www.mfa.org" target="_blank" rel="noopener" onclick="event.stopPropagation()">Source</a>
+            <a href="https://www.google.com/maps/search/?api=1&query=Museum+of+Fine+Arts+Boston+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
+          </div>
+          <div class="learn-more-hint">Click for history &amp; primary sources</div>
+          <div class="comments-section" data-site="mfa-boston" onclick="event.stopPropagation()">
+            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
+            <div class="comments-list"></div>
+          </div>
+        </div>
+      </div>
+      <div class="event-card" onclick="openModal('beacon-hill')">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/Acorn_Street_Beacon_Hill_Boston_Massachusetts.jpg/960px-Acorn_Street_Beacon_Hill_Boston_Massachusetts.jpg" alt="Acorn Street, Beacon Hill" loading="lazy" onerror="this.parentElement.innerHTML='<div class=img-placeholder>BH</div>'">
+        </div>
+        <div class="card-body">
+          <h3>Beacon Hill</h3>
+          <p class="summary">Historic Boston neighborhood with Federal-style row houses, cobblestone streets, and gas lamps. Walk Acorn Street and see the Massachusetts State House.</p>
+          <div class="details"><span class="tag">1&ndash;2 hrs</span><span class="tag free">Free</span></div>
+          <div class="links">
+            <a href="https://www.thefreedomtrail.org" target="_blank" rel="noopener" onclick="event.stopPropagation()">Source</a>
+            <a href="https://www.google.com/maps/search/?api=1&query=Beacon+Hill+Boston+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
+          </div>
+          <div class="learn-more-hint">Click for history &amp; primary sources</div>
+          <div class="comments-section" data-site="beacon-hill" onclick="event.stopPropagation()">
+            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
+            <div class="comments-list"></div>
+          </div>
+        </div>
+      </div>
+      <div class="event-card" onclick="openModal('bunker-hill')">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/da/Bunker_Hill_Monument%2C_Charlestown%2C_MA_2023-02-20.jpg/500px-Bunker_Hill_Monument%2C_Charlestown%2C_MA_2023-02-20.jpg" alt="Bunker Hill Monument" loading="lazy" onerror="this.parentElement.innerHTML='<div class=img-placeholder>BHm</div>'">
+        </div>
+        <div class="card-body">
+          <h3>Bunker Hill Monument</h3>
+          <p class="summary">Memorial to the Battle of Bunker Hill fought on June 17, 1775. Climb the 294 steps of the granite obelisk for panoramic views of Boston.</p>
+          <div class="details"><span class="tag">45&ndash;90 min</span><span class="tag free">Free</span></div>
+          <div class="links">
+            <a href="https://www.nps.gov/bost" target="_blank" rel="noopener" onclick="event.stopPropagation()">Source</a>
+            <a href="https://www.google.com/maps/search/?api=1&query=Bunker+Hill+Monument+Boston+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
+          </div>
+          <div class="learn-more-hint">Click for history &amp; primary sources</div>
+          <div class="comments-section" data-site="bunker-hill" onclick="event.stopPropagation()">
+            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
+            <div class="comments-list"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== DAY 6 ===== -->
+<section class="day-section" id="day-6">
+  <div class="container">
+    <div class="day-header">
+      <div class="day-number">Day 6</div>
+      <h2>Flexible Day</h2>
+      <div class="day-date">Thursday, October 8, 2026</div>
+      <div class="day-summary">An open day to revisit favorites, explore Nantasket Beach further, or take a Plymouth excursion. Use the notes below to plan.</div>
+    </div>
+    <div class="events-grid">
+      <div class="event-card" onclick="openModal('nantasket-beach')">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Nantasket_beach_tide_pools.jpg/960px-Nantasket_beach_tide_pools.jpg" alt="Nantasket Beach" loading="lazy" onerror="this.parentElement.innerHTML='<div class=img-placeholder>NB</div>'">
+        </div>
+        <div class="card-body">
+          <h3>Nantasket Beach</h3>
+          <p class="summary">Spend a relaxing day at this historic South Shore beach. Paragon Park Carousel, boardwalk, and ocean views.</p>
+          <div class="details"><span class="tag">Flexible</span><span class="tag free">Free</span></div>
+          <div class="links">
+            <a href="https://www.hull-ma.gov" target="_blank" rel="noopener" onclick="event.stopPropagation()">Source</a>
+            <a href="https://www.google.com/maps/search/?api=1&query=Nantasket+Beach+Hull+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
+          </div>
+          <div class="learn-more-hint">Click for history &amp; primary sources</div>
+          <div class="comments-section" data-site="flex-nantasket" onclick="event.stopPropagation()">
+            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
+            <div class="comments-list"></div>
+          </div>
+        </div>
+      </div>
+      <div class="event-card">
+        <div class="card-img"><div class="img-placeholder">PL</div></div>
+        <div class="card-body">
+          <h3>Plymouth Excursion</h3>
+          <p class="day-note">A preview of Plymouth before Day 8. Visit Plymouth Rock, the waterfront, or explore downtown Plymouth's shops and restaurants.</p>
+          <div class="links">
+            <a href="https://www.google.com/maps/search/?api=1&query=Plymouth+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
+          </div>
+          <div class="comments-section" data-site="flex-plymouth" onclick="event.stopPropagation()">
+            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
+            <div class="comments-list"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== DAY 7 ===== -->
+<section class="day-section" id="day-7">
+  <div class="container">
+    <div class="day-header">
+      <div class="day-number">Day 7</div>
+      <h2>Freedom Trail &amp; Adams Sites</h2>
+      <div class="day-date">Friday, October 9, 2026</div>
+      <div class="day-summary">Walk the Freedom Trail through downtown Boston. Visit the sites of the Revolution, then head to Quincy for the Adams National Historical Park and Stone Library.</div>
+    </div>
+    <div class="events-grid">
+      <div class="event-card" onclick="openModal('boston-common')">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/The_Parkman_Bandstand%2C_Boston_Common%2C_Boston%2C_Massachusetts.jpg/960px-The_Parkman_Bandstand%2C_Boston_Common%2C_Boston%2C_Massachusetts.jpg" alt="Boston Common with Parkman Bandstand" loading="lazy" onerror="this.parentElement.innerHTML='<div class=img-placeholder>BC</div>'">
+        </div>
+        <div class="card-body">
+          <h3>Boston Common</h3>
+          <p class="summary">America's oldest public park, established in 1634. Starting point of the Freedom Trail and a beautiful green space in the heart of the city.</p>
+          <div class="details"><span class="tag">30&ndash;60 min</span><span class="tag free">Free</span></div>
+          <div class="links">
+            <a href="https://www.thefreedomtrail.org" target="_blank" rel="noopener" onclick="event.stopPropagation()">Source</a>
+            <a href="https://www.google.com/maps/search/?api=1&query=Boston+Common+Boston+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
+          </div>
+          <div class="learn-more-hint">Click for history &amp; primary sources</div>
+          <div class="comments-section" data-site="boston-common" onclick="event.stopPropagation()">
+            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
+            <div class="comments-list"></div>
+          </div>
+        </div>
+      </div>
+      <div class="event-card" onclick="openModal('paul-revere')">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Paul_Revere%27s_House_Freedom_Trail_Boston.JPG/960px-Paul_Revere%27s_House_Freedom_Trail_Boston.JPG" alt="Paul Revere House" loading="lazy" onerror="this.parentElement.innerHTML='<div class=img-placeholder>PR</div>'">
+        </div>
+        <div class="card-body">
+          <h3>Paul Revere House</h3>
+          <p class="summary">The home of patriot Paul Revere from 1770 to 1800. The oldest building in downtown Boston, it's where he left on his famous midnight ride.</p>
+          <div class="details"><span class="tag">30&ndash;45 min</span><span class="tag admission">Admission</span></div>
+          <div class="links">
+            <a href="https://www.paulreverehouse.org" target="_blank" rel="noopener" onclick="event.stopPropagation()">Source</a>
+            <a href="https://www.google.com/maps/search/?api=1&query=Paul+Revere+House+Boston+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
+          </div>
+          <div class="learn-more-hint">Click for history &amp; primary sources</div>
+          <div class="comments-section" data-site="paul-revere" onclick="event.stopPropagation()">
+            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
+            <div class="comments-list"></div>
+          </div>
+        </div>
+      </div>
+      <div class="event-card" onclick="openModal('old-north-church')">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/85/Old_North_Church%2C_Boston%2C_Mass_%2860107%29.jpg/500px-Old_North_Church%2C_Boston%2C_Mass_%2860107%29.jpg" alt="Old North Church" loading="lazy" onerror="this.parentElement.innerHTML='<div class=img-placeholder>ONC</div>'">
+        </div>
+        <div class="card-body">
+          <h3>Old North Church</h3>
+          <p class="summary">The "one if by land, two if by sea" signal lanterns were hung here in 1775. Boston's oldest standing church building.</p>
+          <div class="details"><span class="tag">45&ndash;60 min</span><span class="tag admission">Tour Admission</span></div>
+          <div class="links">
+            <a href="https://oldnorth.com" target="_blank" rel="noopener" onclick="event.stopPropagation()">Source</a>
+            <a href="https://www.google.com/maps/search/?api=1&query=Old+North+Church+Boston+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
+          </div>
+          <div class="learn-more-hint">Click for history &amp; primary sources</div>
+          <div class="comments-section" data-site="old-north-church" onclick="event.stopPropagation()">
+            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
+            <div class="comments-list"></div>
+          </div>
+        </div>
+      </div>
+      <div class="event-card" onclick="openModal('old-south-mh')">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/70/Old_South_Meeting_House_in_Boston_MA.jpg/960px-Old_South_Meeting_House_in_Boston_MA.jpg" alt="Old South Meeting House" loading="lazy" onerror="this.parentElement.innerHTML='<div class=img-placeholder>OS</div>'">
+        </div>
+        <div class="card-body">
+          <h3>Old South Meeting House</h3>
+          <p class="summary">The gathering place where colonists protested British policies, culminating in the Boston Tea Party. A museum of revolutionary history.</p>
+          <div class="details"><span class="tag">45&ndash;60 min</span><span class="tag admission">Museum Admission</span></div>
+          <div class="links">
+            <a href="https://www.thefreedomtrail.org" target="_blank" rel="noopener" onclick="event.stopPropagation()">Source</a>
+            <a href="https://www.google.com/maps/search/?api=1&query=Old+South+Meeting+House+Boston+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
+          </div>
+          <div class="learn-more-hint">Click for history &amp; primary sources</div>
+          <div class="comments-section" data-site="old-south-mh" onclick="event.stopPropagation()">
+            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
+            <div class="comments-list"></div>
+          </div>
+        </div>
+      </div>
+      <div class="event-card" onclick="openModal('adams-nhp')">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/Adams_National_Historical_Park_ADAM4833.jpg/960px-Adams_National_Historical_Park_ADAM4833.jpg" alt="Adams National Historical Park" loading="lazy" onerror="this.parentElement.innerHTML='<div class=img-placeholder>AN</div>'">
+        </div>
+        <div class="card-body">
+          <h3>Adams National Historical Park</h3>
+          <p class="summary">The homes of John Adams and John Quincy Adams in Quincy. Includes the Old House, where four generations of the Adams family lived.</p>
+          <div class="details"><span class="tag">2&ndash;3 hrs</span><span class="tag admission">Seasonal Admission</span></div>
+          <div class="links">
+            <a href="https://www.nps.gov/adam" target="_blank" rel="noopener" onclick="event.stopPropagation()">Source</a>
+            <a href="https://www.google.com/maps/search/?api=1&query=Adams+National+Historical+Park+Quincy+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
+          </div>
+          <div class="learn-more-hint">Click for history &amp; primary sources</div>
+          <div class="comments-section" data-site="adams-nhp" onclick="event.stopPropagation()">
+            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
+            <div class="comments-list"></div>
+          </div>
+        </div>
+      </div>
+      <div class="event-card" onclick="openModal('stone-library')">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d8/Adams_National_Park_Stone_Library.jpg/960px-Adams_National_Park_Stone_Library.jpg" alt="Stone Library at Adams National Historical Park" loading="lazy" onerror="this.parentElement.innerHTML='<div class=img-placeholder>SL</div>'">
+        </div>
+        <div class="card-body">
+          <h3>Stone Library</h3>
+          <p class="summary">A unique fireproof stone library on the Adams National Historical Park grounds. Houses more than 14,000 volumes from the Adams family collection.</p>
+          <div class="details"><span class="tag">20&ndash;30 min</span><span class="tag admission">Included with Tour</span></div>
+          <div class="links">
+            <a href="https://www.nps.gov/places/stone-library.htm" target="_blank" rel="noopener" onclick="event.stopPropagation()">Source</a>
+            <a href="https://www.google.com/maps/search/?api=1&query=Stone+Library+Quincy+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
+          </div>
+          <div class="learn-more-hint">Click for history &amp; primary sources</div>
+          <div class="comments-section" data-site="stone-library" onclick="event.stopPropagation()">
+            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
+            <div class="comments-list"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== DAY 8 ===== -->
+<section class="day-section" id="day-8">
+  <div class="container">
+    <div class="day-header">
+      <div class="day-number">Day 8</div>
+      <h2>Plymouth &mdash; The Pilgrim Story</h2>
+      <div class="day-date">Saturday, October 10, 2026</div>
+      <div class="day-summary">Visit the landing site of the Pilgrims at Plymouth Rock and climb aboard the full-scale replica Mayflower II at Plimoth Patuxet.</div>
+    </div>
+    <div class="events-grid">
+      <div class="event-card" onclick="openModal('plymouth-rock')">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f1/Plymouth_Rock_Monument.jpg/960px-Plymouth_Rock_Monument.jpg" alt="Plymouth Rock Monument" loading="lazy" onerror="this.parentElement.innerHTML='<div class=img-placeholder>PR</div>'">
+        </div>
+        <div class="card-body">
+          <h3>Plymouth Rock</h3>
+          <p class="summary">The traditional landing site of the Pilgrims in 1620. Enshrined under a classical granite portico on Plymouth's waterfront.</p>
+          <div class="details"><span class="tag">15&ndash;30 min</span><span class="tag free">Free</span></div>
+          <div class="links">
+            <a href="https://www.pilgrimhall.org" target="_blank" rel="noopener" onclick="event.stopPropagation()">Source</a>
+            <a href="https://www.google.com/maps/search/?api=1&query=Plymouth+Rock+Plymouth+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
+          </div>
+          <div class="learn-more-hint">Click for history &amp; primary sources</div>
+          <div class="comments-section" data-site="plymouth-rock" onclick="event.stopPropagation()">
+            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
+            <div class="comments-list"></div>
+          </div>
+        </div>
+      </div>
+      <div class="event-card" onclick="openModal('mayflower-ii')">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Plymouth_Mayflower_II.jpg/960px-Plymouth_Mayflower_II.jpg" alt="Mayflower II replica ship" loading="lazy" onerror="this.parentElement.innerHTML='<div class=img-placeholder>M2</div>'">
+        </div>
+        <div class="card-body">
+          <h3>Mayflower II</h3>
+          <p class="summary">A full-scale reproduction of the original Mayflower ship. Tour the decks and learn about the 66-day voyage of the Pilgrims in 1620.</p>
+          <div class="details"><span class="tag">60&ndash;90 min</span><span class="tag admission">Admission</span></div>
+          <div class="links">
+            <a href="https://plimoth.org" target="_blank" rel="noopener" onclick="event.stopPropagation()">Source</a>
+            <a href="https://www.google.com/maps/search/?api=1&query=Mayflower+II+Plymouth+MA" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google Maps</a>
+          </div>
+          <div class="learn-more-hint">Click for history &amp; primary sources</div>
+          <div class="comments-section" data-site="mayflower-ii" onclick="event.stopPropagation()">
+            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
+            <div class="comments-list"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== DAY 9 ===== -->
+<section class="day-section" id="day-9">
+  <div class="container">
+    <div class="day-header">
+      <div class="day-number">Day 9</div>
+      <h2>Departure</h2>
+      <div class="day-date">Sunday, October 11, 2026</div>
+      <div class="day-summary">Return the rental car and fly out of Boston Logan. Safe travels!</div>
+    </div>
+    <div class="events-grid">
+      <div class="event-card">
+        <div class="card-img"><div class="img-placeholder">BOS</div></div>
+        <div class="card-body">
+          <h3>Return to Boston Logan Airport</h3>
+          <p class="day-note">Return rental car at Logan, check bags, and depart. Allow 2+ hours before flight time.</p>
+          <div class="comments-section" data-site="departure" onclick="event.stopPropagation()">
+            <div class="comment-form"><input type="text" placeholder="Add a note..." /><button onclick="addComment(this)">Add</button></div>
+            <div class="comments-list"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <p>Massachusetts Historical Travel Guide &mdash; October 3&ndash;11, 2026</p>
+    <p style="margin-top:0.3rem">Data sourced from <a href="TripDetails.txt">TripDetails.txt</a> &bull; Images via Wikimedia Commons &amp; Library of Congress</p>
+  </div>
+</footer>
+
+<button class="scroll-top" id="scrollTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Scroll to top">&uarr;</button>
+
+<!-- ===== MODAL ===== -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-img" id="modalImg"></div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script>
+  // ---- Nav scroll highlighting ----
+  const sections = document.querySelectorAll('.day-section');
+  const navLinks = document.querySelectorAll('.days-nav a');
+  const scrollBtn = document.getElementById('scrollTop');
+  function updateNav() {
+    let current = '';
+    sections.forEach(s => { const r = s.getBoundingClientRect(); if (r.top <= 200) current = s.id; });
+    navLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + current));
+    scrollBtn.classList.toggle('visible', window.scrollY > 500);
+  }
+  window.addEventListener('scroll', updateNav, { passive: true });
+  window.addEventListener('resize', updateNav, { passive: true });
+  updateNav();
+
+  // ---- Comments via localStorage ----
+  function getComments(id) { try { return JSON.parse(localStorage.getItem('tripComments_'+id))||[]; } catch { return []; } }
+  function saveComments(id, c) { localStorage.setItem('tripComments_'+id, JSON.stringify(c)); }
+  function renderComments(el) {
+    const id = el.dataset.site, list = el.querySelector('.comments-list'), comments = getComments(id);
+    if (!comments.length) { list.innerHTML = '<div class="no-comments">No notes yet</div>'; return; }
+    list.innerHTML = comments.map((c,i) =>
+      `<div class="comment-item"><span class="comment-text">${escHtml(c.text)}</span><span class="comment-time">${c.time}</span><button class="delete-comment" onclick="deleteComment(this,'${id}',${i})">&times;</button></div>`
+    ).join('');
+  }
+  function escHtml(s) { const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+  function addComment(btn) {
+    const sec = btn.closest('.comments-section'), inp = sec.querySelector('input'), text = inp.value.trim();
+    if (!text) return;
+    const id = sec.dataset.site, comments = getComments(id);
+    const now = new Date(), time = now.toLocaleDateString()+' '+now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    comments.push({text,time}); saveComments(id, comments); renderComments(sec); inp.value='';
+  }
+  function deleteComment(el, id, idx) { const c=getComments(id); c.splice(idx,1); saveComments(id,c); renderComments(el.closest('.comments-section')); }
+  document.addEventListener('keydown', e => { if (e.key==='Enter' && e.target.closest('.comment-form')) e.target.closest('.comment-form').querySelector('button').click(); });
+  document.querySelectorAll('.comments-section').forEach(renderComments);
+
+  // ---- Modal ----
+  const modalData = {
+    'boston-logan': {
+      name: 'Boston Logan International Airport', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fe/Boston_Logan_International_Airport_-_Terminal_A_%28cropped%29.jpg/960px-Boston_Logan_International_Airport_-_Terminal_A_%28cropped%29.jpg',
+      time: 'Arrival', admission: 'N/A',
+      map: 'https://www.google.com/maps/search/?api=1&query=Boston+Logan+International+Airport+Boston+MA',
+      summary: 'Boston Logan International Airport (BOS) has been the primary airport serving New England since its opening in 1923 on a tidal flat in East Boston. Originally called Boston Airfield, it was renamed in 1956 for General Edward Lawrence Logan. During World War II, the airport was used by the U.S. Army Air Forces for anti-submarine patrols. Today it handles over 40 million passengers annually across four passenger terminals (A–E) and is a major hub for Delta Air Lines and JetBlue.',
+      sources: [
+        { name: 'Massport — Logan Airport History', url: 'https://www.massport.com/logan-airport/about-logan/airport-history' },
+        { name: 'Wikipedia — Logan International Airport', url: 'https://en.wikipedia.org/wiki/Logan_International_Airport' },
+        { name: 'FAA Airport Data — BOS', url: 'https://www.faa.gov/airports/airport_safety/airportdata_5010/menu/' }
+      ]
+    },
+    'lexington-green': {
+      name: 'Lexington Green', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fc/Lexington_Battle_Green%2C_Lexington_MA.jpg/960px-Lexington_Battle_Green%2C_Lexington_MA.jpg',
+      time: '30–45 min', admission: 'Free',
+      map: 'https://www.google.com/maps/search/?api=1&query=Lexington+Green+Lexington+MA',
+      summary: 'On April 19, 1775, Lexington Green was the site of the first military engagement of the American Revolutionary War. Captain John Parker assembled about 77 Lexington minutemen on the common to face approximately 700 British regulars under Major John Pitcairn. Shots were fired — who fired first remains debated — and eight militiamen were killed, ten wounded. The "Lexington Alarm" spread rapidly, mobilizing colonial militias across Massachusetts. The green has been preserved as a National Historic Landmark and is the centerpiece of the town of Lexington.',
+      sources: [
+        { name: 'Lexington Historical Society — Battle of Lexington', url: 'https://www.lexingtonhistory.org' },
+        { name: 'NPS — Minute Man NHP: Lexington Green', url: 'https://www.nps.gov/mima/planyourvisit/lexington-green.htm' },
+        { name: 'American Battlefield Trust — Lexington & Concord', url: 'https://www.battlefields.org/learn/revolutionary-war/battles/lexington-and-concord' },
+        { name: 'Library of Congress — Lexington Green historic photos', url: 'https://www.loc.gov/pictures/search/?q=Lexington%20Green' }
+      ]
+    },
+    'buckman-tavern': {
+      name: 'Buckman Tavern', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Buckman_Tavern_1.jpg/960px-Buckman_Tavern_1.jpg',
+      time: '45–60 min', admission: 'Admission',
+      map: 'https://www.google.com/maps/search/?api=1&query=Buckman+Tavern+Lexington+MA',
+      summary: 'Built in 1710, Buckman Tavern is the oldest building in Lexington still serving as a tavern. In the early morning hours of April 19, 1775, it served as the headquarters and gathering place for the Lexington militia as they awaited the arrival of British troops. The tavern\'s "Listening Ear" sign and bullet-scarred door are tangible links to the day the Revolution began. Today it operates as a museum with period furnishings and exhibits on Lexington\'s role in the War of Independence.',
+      sources: [
+        { name: 'American Battlefield Trust — Buckman Tavern', url: 'https://www.battlefields.org/visit/heritage-sites/buckman-tavern' },
+        { name: 'Lexington Historical Society — Buckman Tavern', url: 'https://www.lexingtonhistory.org/buckman-tavern' },
+        { name: 'NPS — Buckman Tavern on the Freedom Trail', url: 'https://www.nps.gov/places/buckman-tavern.htm' }
+      ]
+    },
+    'hancock-clarke': {
+      name: 'Hancock-Clarke House', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Hancock-Clarke_House%2C_Lexington_MA.jpg/960px-Hancock-Clarke_House%2C_Lexington_MA.jpg',
+      time: '45–60 min', admission: 'Admission',
+      map: 'https://www.google.com/maps/search/?api=1&query=Hancock+Clarke+House+Lexington+MA',
+      summary: 'Built in 1698 as the home of the Rev. John Hancock, grandfather of the famous patriot, this house was later occupied by the Rev. Jonas Clarke. On the night of April 18, 1775, Paul Revere and William Dawes arrived separately to warn Samuel Adams and John Hancock — who were staying there — that British troops were marching toward Lexington. The house served as the headquarters for Hancock and Adams during the critical hours before the battle. It was designated a National Historic Landmark in 1971 and is now a museum.',
+      sources: [
+        { name: 'Lexington Historical Society — Hancock-Clarke House', url: 'https://www.lexingtonhistory.org/hancock-clarke-house' },
+        { name: 'NPS — Hancock-Clarke House NHL', url: 'https://www.nps.gov/nr/travel/pwwmh/ma42.htm' },
+        { name: 'Library of Congress — Hancock-Clarke photos', url: 'https://www.loc.gov/pictures/search/?q=Hancock-Clarke+House' }
+      ]
+    },
+    'battle-road': {
+      name: 'Battle Road Trail', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Battle_Road_Trail_boardwalk%2C_Lincoln_MA.jpg/960px-Battle_Road_Trail_boardwalk%2C_Lincoln_MA.jpg',
+      time: '2–3 hrs', admission: 'Free',
+      map: 'https://www.google.com/maps/search/?api=1&query=Battle+Road+Trail+Minute+Man+NHP+MA',
+      summary: 'The Battle Road Trail traces the 5-mile route of the British retreat from Concord to Charlestown on April 19, 1775. What began as a successful British mission to destroy colonial military supplies turned into a desperate running battle as thousands of Massachusetts militiamen attacked from behind stone walls, trees, and buildings. The trail passes through the Minute Man National Historical Park and connects key sites including Meriam\'s Corner, the Bloody Angle, and Hartwell Tavern. The park was established in 1959 and the trail features interpretive waysides and preserved 18th-century landscape.',
+      sources: [
+        { name: 'NPS — Battle Road Trail Guide', url: 'https://www.nps.gov/mima/planyourvisit/the-battle-road-trail.htm' },
+        { name: 'NPS — Minute Man NHP History', url: 'https://www.nps.gov/mima/learn/historyculture/index.htm' },
+        { name: 'American Battlefield Trust — Battle Road', url: 'https://www.battlefields.org/learn/articles/battle-road' }
+      ]
+    },
+    'hartwell-tavern': {
+      name: 'Hartwell Tavern', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Hartwell_Tavern_1.jpeg/960px-Hartwell_Tavern_1.jpeg',
+      time: '30–45 min', admission: 'Free',
+      map: 'https://www.google.com/maps/search/?api=1&query=Hartwell+Tavern+Minute+Man+NHP+MA',
+      summary: 'Built in 1733 by Samuel Hartwell, this restored 18th-century tavern and homestead sits along the historic Battle Road in Lincoln, Massachusetts. During the British retreat on April 19, 1775, the area around Hartwell Tavern saw intense fighting as colonial militiamen used the surrounding stone walls for cover. Today, the tavern is a centerpiece of Minute Man National Historical Park, with living history demonstrations by costumed park rangers. The restored building gives visitors a vivid sense of daily life in colonial Massachusetts.',
+      sources: [
+        { name: 'NPS — Hartwell Tavern', url: 'https://www.nps.gov/mima/hartwell-tavern.htm' },
+        { name: 'Wikipedia — Hartwell Tavern', url: 'https://en.wikipedia.org/wiki/Hartwell_Tavern' },
+        { name: 'Digital Commonwealth — historic photos', url: 'https://www.digitalcommonwealth.org/search/commonwealth:c534fw24s' }
+      ]
+    },
+    'old-north-bridge': {
+      name: 'Old North Bridge', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/Old_North_Bridge%2C_Concord_MA.jpg/960px-Old_North_Bridge%2C_Concord_MA.jpg',
+      time: '30–60 min', admission: 'Free',
+      map: 'https://www.google.com/maps/search/?api=1&query=Old+North+Bridge+Concord+MA',
+      summary: 'The Old North Bridge over the Concord River is where colonial militia fired "the shot heard round the world" on April 19, 1775. After the brief fight at Lexington Green, British troops marched to Concord to destroy military stores. At the North Bridge, about 400 militiamen from nearby towns faced three companies of British soldiers. The British fired first, but the colonists returned fire — and the British retreated. This was the first time colonial militia had been ordered to fire on British troops, marking a point of no return. Ralph Waldo Emerson immortalized the event in his 1837 "Concord Hymn."',
+      sources: [
+        { name: 'NPS — Minute Man NHP: Old North Bridge', url: 'https://www.nps.gov/mima/planyourvisit/old-north-bridge.htm' },
+        { name: 'Concord Museum — April 19, 1775', url: 'https://concordmuseum.org/learn/april-19-1775/' },
+        { name: 'Emerson\'s "Concord Hymn" full text', url: 'https://www.poetryfoundation.org/poems/45867/concord-hymn' },
+        { name: 'Wikipedia — Old North Bridge', url: 'https://en.wikipedia.org/wiki/Old_North_Bridge' }
+      ]
+    },
+    'old-manse': {
+      name: 'Old Manse', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cc/Old_Manse%2C_Concord_MA_-_HABS_080260pu.jpg/960px-Old_Manse%2C_Concord_MA_-_HABS_080260pu.jpg',
+      time: '60–90 min', admission: 'Tour Admission',
+      map: 'https://www.google.com/maps/search/?api=1&query=Old+Manse+Concord+MA',
+      summary: 'Built in 1769 for the Rev. William Emerson (grandfather of Ralph Waldo Emerson), the Old Manse overlooks the Concord River and Old North Bridge. From its windows, Emerson\'s family witnessed the battle at the bridge. Nathaniel Hawthorne rented the house from 1842 to 1846, calling it "The Old Manse" and writing his story collection "Mosses from an Old Manse" there. The home is one of the most historically layered buildings in America, linking the Revolutionary and literary eras. It is now owned by The Trustees of Reservations.',
+      sources: [
+        { name: 'The Trustees — Old Manse', url: 'https://thetrustees.org/place/the-old-manse/' },
+        { name: 'Library of Congress HABS — Old Manse', url: 'https://www.loc.gov/pictures/item/ma0272/' },
+        { name: 'Wikipedia — The Old Manse', url: 'https://en.wikipedia.org/wiki/The_Old_Manse' },
+        { name: 'Hawthorne in The Old Manse (text)', url: 'https://www.gutenberg.org/ebooks/5064' }
+      ]
+    },
+    'orchard-house': {
+      name: 'Orchard House', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/56/Louisa_May_Alcott%27s_%22Orchard_House%2C%22_Lexington_Road%2C_Concord%2C_Mass._-_DPLA_-_b410987702551403d85d2f73250000a1.jpg/960px-Louisa_May_Alcott%27s_%22Orchard_House%2C%22_Lexington_Road%2C_Concord%2C_Mass._-_DPLA_-_b410987702551403d85d2f73250000a1.jpg',
+      time: '60–90 min', admission: 'Admission',
+      map: 'https://www.google.com/maps/search/?api=1&query=Orchard+House+Concord+MA',
+      summary: 'Orchard House was the home of the Alcott family from 1858 to 1877. It was here that Louisa May Alcott wrote "Little Women" (1868), drawing heavily from her own experiences growing up with her three sisters in this house. The novel became an instant classic and has never gone out of print. The home is remarkably preserved with original furnishings, family artifacts, and the half-moon desk where Louisa wrote the manuscript. The property also includes the School of Philosophy, founded by Louisa\'s father, the transcendentalist educator Bronson Alcott.',
+      sources: [
+        { name: 'Louisa May Alcott\'s Orchard House', url: 'https://louisamayalcott.org' },
+        { name: 'Library of Congress — Orchard House photos', url: 'https://www.loc.gov/item/2016808398/' },
+        { name: 'NPS — Orchard House NHL', url: 'https://www.nps.gov/nr/travel/pwwmh/ma41.htm' }
+      ]
+    },
+    'sleepy-hollow': {
+      name: 'Sleepy Hollow Cemetery', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Sleepy_Hollow_Cemetery_in_Concord%2C_Mass_2012-0083.jpg/960px-Sleepy_Hollow_Cemetery_in_Concord%2C_Mass_2012-0083.jpg',
+      time: '45–60 min', admission: 'Free',
+      map: 'https://www.google.com/maps/search/?api=1&query=Sleepy+Hollow+Cemetery+Concord+MA',
+      summary: 'Established in 1855, Sleepy Hollow Cemetery is the final resting place of Concord\'s most famous literary figures on "Authors Ridge." Ralph Waldo Emerson, Henry David Thoreau, Nathaniel Hawthorne, Louisa May Alcott, and her father Bronson Alcott are all buried within a few steps of each other. The cemetery was designed in the rural cemetery movement style, with winding paths through wooded hills. The Melvin Memorial, a striking sculpture by Daniel Chester French (sculptor of the Lincoln Memorial), honors three brothers who died in the Civil War.',
+      sources: [
+        { name: 'Town of Concord — Sleepy Hollow Cemetery', url: 'https://concordma.gov/1956/Sleepy-Hollow-Cemetery' },
+        { name: 'Digital Commonwealth — historic photos', url: 'https://www.digitalcommonwealth.org/search/commonwealth:fj236k46b' },
+        { name: 'Wikipedia — Sleepy Hollow Cemetery', url: 'https://en.wikipedia.org/wiki/Sleepy_Hollow_Cemetery_(Concord,_Massachusetts)' }
+      ]
+    },
+    'walden-pond': {
+      name: 'Walden Pond', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/Walden_Pond_State_Reservation_-_Concord%2C_Massachusetts%2C_May_15%2C_2010.jpg/960px-Walden_Pond_State_Reservation_-_Concord%2C_Massachusetts%2C_May_15%2C_2010.jpg',
+      time: '1.5–3 hrs', admission: 'State fee may apply',
+      map: 'https://www.google.com/maps/search/?api=1&query=Walden+Pond+Concord+MA',
+      summary: 'Walden Pond is the 64-acre gem where Henry David Thoreau lived for two years, two months, and two days (1845–1847) in a small cabin he built himself. His account of the experiment, "Walden; or, Life in the Woods" (1854), became a landmark of American literature and environmental thought. The pond is a National Historic Landmark and is surrounded by the 411-acre Walden Pond State Reservation. Visitors can swim, fish, hike, and see a replica of Thoreau\'s cabin. The site draws over 500,000 visitors annually.',
+      sources: [
+        { name: 'Mass DCR — Walden Pond State Reservation', url: 'https://www.mass.gov/locations/walden-pond-state-reservation' },
+        { name: 'The Walden Woods Project', url: 'https://www.walden.org/' },
+        { name: 'Thoreau\'s "Walden" full text', url: 'https://www.gutenberg.org/ebooks/205' },
+        { name: 'NPS — Walden Pond NHL', url: 'https://www.nps.gov/nr/travel/massachusetts_conservation/walden_pond.html' }
+      ]
+    },
+    'historic-deerfield': {
+      name: 'Historic Deerfield', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f7/Deerfield_MA_IMG_1460.jpg/960px-Deerfield_MA_IMG_1460.jpg',
+      time: '3–5 hrs', admission: 'Museum Admission',
+      map: 'https://www.google.com/maps/search/?api=1&query=Historic+Deerfield+Deerfield+MA',
+      summary: 'Historic Deerfield is one of America\'s premier outdoor history museums, preserving a mile-long street of 12 historic house museums dating from 1720 to 1850. The village was the site of the 1704 Deerfield Raid during Queen Anne\'s War, when French and Native American forces attacked the settlement. Today, it showcases an unparalleled collection of early American furniture, silver, textiles, and ceramics. The Flynt Center of Early New England Life houses over 25,000 artifacts. Deerfield Academy, a prestigious preparatory school, also calls the village home.',
+      sources: [
+        { name: 'Historic Deerfield Official Site', url: 'https://www.historic-deerfield.org' },
+        { name: 'Wikipedia — Historic Deerfield', url: 'https://en.wikipedia.org/wiki/Historic_Deerfield' },
+        { name: 'Digital Commonwealth — Deerfield historic photos', url: 'https://www.digitalcommonwealth.org/search/commonwealth:0g359554v' },
+        { name: 'The 1704 Raid on Deerfield', url: 'https://memorialhall.mass.edu/1704/' }
+      ]
+    },
+    'nantasket-beach': {
+      name: 'Nantasket Beach', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Nantasket_beach_tide_pools.jpg/960px-Nantasket_beach_tide_pools.jpg',
+      time: '2–6 hrs', admission: 'Free',
+      map: 'https://www.google.com/maps/search/?api=1&query=Nantasket+Beach+Hull+MA',
+      summary: 'Nantasket Beach is a 5.5-mile crescent of sandy beach on the Atlantic coast in Hull, Massachusetts. Its name comes from the Wampanoag word for "ebb tide." The beach has been a popular resort destination since the Victorian era, when steamships brought day-trippers from Boston. The historic Paragon Park Carousel (built 1928) still operates nearby. The beach offers gentle surf, tide pools, and views of Boston Light, America\'s oldest lighthouse station (1716). Nantasket is part of the Nantasket Beach Reservation, one of the premier public beaches in eastern Massachusetts.',
+      sources: [
+        { name: 'Town of Hull — Nantasket Beach', url: 'https://www.hull-ma.gov' },
+        { name: 'Mass DCR — Nantasket Beach Reservation', url: 'https://www.mass.gov/locations/nantasket-beach-reservation' },
+        { name: 'Wikipedia — Nantasket Beach', url: 'https://en.wikipedia.org/wiki/Nantasket_Beach' }
+      ]
+    },
+    'gardner-museum': {
+      name: 'Isabella Stewart Gardner Museum', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Isabella-Stewart-Gardner-Museum-Courtyard-01.jpg/960px-Isabella-Stewart-Gardner-Museum-Courtyard-01.jpg',
+      time: '2–3 hrs', admission: 'Museum Admission',
+      map: 'https://www.google.com/maps/search/?api=1&query=Isabella+Stewart+Gardner+Museum+Boston+MA',
+      summary: 'Isabella Stewart Gardner opened her Venetian-style palace museum in 1903, filling it with over 2,500 objects spanning ancient Rome, Renaissance Italy, Asian art, and more. She arranged every room herself, stipulating that nothing should ever be moved from its original placement. The museum is famous for the 1990 art heist — the largest property theft in history — when two thieves disguised as police stole 13 works valued at $500 million, including Vermeer\'s "The Concert." The empty frames still hang in place as memorials. The museum\'s courtyard garden, with its four-season plantings, is a serene oasis in the Fenway.',
+      sources: [
+        { name: 'Isabella Stewart Gardner Museum', url: 'https://www.gardnermuseum.org' },
+        { name: 'FBI — Gardner Museum Theft', url: 'https://www.fbi.gov/history/famous-cases/gardner-museum-theft' },
+        { name: 'Wikipedia — Isabella Stewart Gardner Museum', url: 'https://en.wikipedia.org/wiki/Isabella_Stewart_Gardner_Museum' },
+        { name: 'Library of Congress — Gardner Museum', url: 'https://www.loc.gov/pictures/search/?q=Isabella+Stewart+Gardner+Museum' }
+      ]
+    },
+    'mfa-boston': {
+      name: 'Museum of Fine Arts Boston', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/2018_Museum_of_Fine_Arts_Boston_Huntington_Avenue_facade_from_east.jpg/960px-2018_Museum_of_Fine_Arts_Boston_Huntington_Avenue_facade_from_east.jpg',
+      time: '3–5 hrs', admission: 'Museum Admission',
+      map: 'https://www.google.com/maps/search/?api=1&query=Museum+of+Fine+Arts+Boston+MA',
+      summary: 'Founded in 1870, the Museum of Fine Arts Boston is among the most comprehensive art museums in the world, with nearly 500,000 works spanning 5,000 years of history. Its collections are particularly strong in Impressionist paintings (the largest collection of Monet\'s works outside France), Egyptian artifacts (including the Giza mastaba tomb of Queen Hetepheres), Japanese art, and American decorative arts. The iconic I.M. Pei–designed West Wing (1981) and the dramatic glass-enclosed Linde Family Wing for Contemporary Art showcase the museum\'s evolution. The MFA\'s Huntington Avenue entrance features Cyrus Dallin\'s famous equestrian sculpture "Appeal to the Great Spirit" (1909).',
+      sources: [
+        { name: 'Museum of Fine Arts Boston', url: 'https://www.mfa.org' },
+        { name: 'Wikipedia — MFA Boston', url: 'https://en.wikipedia.org/wiki/Museum_of_Fine_Arts,_Boston' },
+        { name: 'Library of Congress — MFA photos', url: 'https://www.loc.gov/pictures/search/?q=Museum+of+Fine+Arts+Boston' },
+        { name: 'Google Arts & Culture — MFA', url: 'https://artsandculture.google.com/partner/museum-of-fine-arts-boston' }
+      ]
+    },
+    'beacon-hill': {
+      name: 'Beacon Hill', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/Acorn_Street_Beacon_Hill_Boston_Massachusetts.jpg/960px-Acorn_Street_Beacon_Hill_Boston_Massachusetts.jpg',
+      time: '1–2 hrs', admission: 'Free',
+      map: 'https://www.google.com/maps/search/?api=1&query=Beacon+Hill+Boston+MA',
+      summary: 'Beacon Hill is one of Boston\'s most historic and picturesque neighborhoods. The hill was originally a 60-foot elevation where a beacon was placed to warn of danger in colonial times. In the early 19th century the hill was leveled and developed into a residential district for Boston\'s elite. The neighborhood is famous for its narrow, gas-lit streets, brick sidewalks, and Federal-style row houses. Acorn Street, one of the most photographed streets in America, still has its original cobblestones. The Massachusetts State House, with its iconic gold dome, crowns the summit. The neighborhood is part of the Beacon Hill Historic District, a National Historic Landmark.',
+      sources: [
+        { name: 'The Freedom Trail — Beacon Hill', url: 'https://www.thefreedomtrail.org' },
+        { name: 'Wikipedia — Beacon Hill, Boston', url: 'https://en.wikipedia.org/wiki/Beacon_Hill,_Boston' },
+        { name: 'Library of Congress — Beacon Hill photos', url: 'https://www.loc.gov/pictures/search/?q=Beacon+Hill+Boston' }
+      ]
+    },
+    'bunker-hill': {
+      name: 'Bunker Hill Monument', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/da/Bunker_Hill_Monument%2C_Charlestown%2C_MA_2023-02-20.jpg/500px-Bunker_Hill_Monument%2C_Charlestown%2C_MA_2023-02-20.jpg',
+      time: '45–90 min', admission: 'Free',
+      map: 'https://www.google.com/maps/search/?api=1&query=Bunker+Hill+Monument+Boston+MA',
+      summary: 'The 221-foot granite obelisk commemorates the Battle of Bunker Hill, fought on June 17, 1775, on nearby Breed\'s Hill (despite its name). Though technically a British victory, the battle inflicted devastating casualties on the British forces — over 1,000 killed or wounded — and demonstrated that colonial militia could stand against regular troops. The famous order "Don\'t fire until you see the whites of their eyes" was given by Colonel William Prescott to conserve ammunition. The monument, completed in 1843, has 294 steps to the top with panoramic views of Boston. The Marquis de Lafayette laid its cornerstone in 1825.',
+      sources: [
+        { name: 'NPS — Bunker Hill Monument', url: 'https://www.nps.gov/bost/learn/historyculture/bunker-hill.htm' },
+        { name: 'American Battlefield Trust — Bunker Hill', url: 'https://www.battlefields.org/learn/revolutionary-war/battles/bunker-hill' },
+        { name: 'Wikipedia — Bunker Hill Monument', url: 'https://en.wikipedia.org/wiki/Bunker_Hill_Monument' },
+        { name: 'Library of Congress — historic views of Bunker Hill', url: 'https://www.loc.gov/pictures/search/?q=Bunker+Hill+Monument' }
+      ]
+    },
+    'boston-common': {
+      name: 'Boston Common', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/The_Parkman_Bandstand%2C_Boston_Common%2C_Boston%2C_Massachusetts.jpg/960px-The_Parkman_Bandstand%2C_Boston_Common%2C_Boston%2C_Massachusetts.jpg',
+      time: '30–60 min', admission: 'Free',
+      map: 'https://www.google.com/maps/search/?api=1&query=Boston+Common+Boston+MA',
+      summary: 'Founded in 1634, Boston Common is the oldest public park in the United States. It was originally purchased by the town for use as a common grazing ground for cattle and as a militia training field. Over nearly four centuries, it has been a site for British military encampments, public executions (including during the Salem witch trials era), anti-slavery rallies, and celebratory gatherings. The Parkman Bandstand, erected in 1912, hosts concerts and events. The Common anchors the southern end of the Freedom Trail and is adjacent to the Massachusetts State House. At 50 acres, it remains Boston\'s central green space.',
+      sources: [
+        { name: 'The Freedom Trail — Boston Common', url: 'https://www.thefreedomtrail.org' },
+        { name: 'City of Boston — Boston Common History', url: 'https://www.boston.gov/parks/boston-common' },
+        { name: 'Wikipedia — Boston Common', url: 'https://en.wikipedia.org/wiki/Boston_Common' },
+        { name: 'Library of Congress — Boston Common historic photos', url: 'https://www.loc.gov/pictures/search/?q=Boston+Common' }
+      ]
+    },
+    'paul-revere': {
+      name: 'Paul Revere House', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Paul_Revere%27s_House_Freedom_Trail_Boston.JPG/960px-Paul_Revere%27s_House_Freedom_Trail_Boston.JPG',
+      time: '30–45 min', admission: 'Admission',
+      map: 'https://www.google.com/maps/search/?api=1&query=Paul+Revere+House+Boston+MA',
+      summary: 'Built in 1680, the Paul Revere House is the oldest remaining structure in downtown Boston and the only home of patriot Paul Revere still standing. Revere owned the house from 1770 to 1800, and it was from here that he left on his famous midnight ride on April 18, 1775. The house survived extensive urban renewal and was meticulously restored in 1907–1908, opening as a museum in 1908. It features original 17th-century timber-frame construction and period furnishings. Over 250,000 visitors tour the house each year.',
+      sources: [
+        { name: 'Paul Revere House Official Site', url: 'https://www.paulreverehouse.org' },
+        { name: 'NPS — Paul Revere House', url: 'https://www.nps.gov/places/paul-revere-house.htm' },
+        { name: 'Library of Congress — Paul Revere House photos', url: 'https://www.loc.gov/pictures/search/?q=Paul+Revere+House+Boston' },
+        { name: 'Longfellow\'s "Paul Revere\'s Ride"', url: 'https://www.poetryfoundation.org/poems/44178/paul-reveres-ride' }
+      ]
+    },
+    'old-north-church': {
+      name: 'Old North Church', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/85/Old_North_Church%2C_Boston%2C_Mass_%2860107%29.jpg/500px-Old_North_Church%2C_Boston%2C_Mass_%2860107%29.jpg',
+      time: '45–60 min', admission: 'Tour Admission',
+      map: 'https://www.google.com/maps/search/?api=1&query=Old+North+Church+Boston+MA',
+      summary: 'Built in 1723, the Old North Church (officially Christ Church) is the oldest standing church building in Boston. It was from its steeple that sexton Robert Newman hung two lanterns on April 18, 1775, signaling "one if by land, two if by sea" — warning that British troops were crossing the Charles River to march on Lexington and Concord. The church\'s interior features 16th-century box pews, a 1724 organ, and the largest set of change-ringing bells in North America (cast in 1744). The church remains an active Episcopal parish and is a key stop on the Freedom Trail.',
+      sources: [
+        { name: 'Old North Church Official Site', url: 'https://oldnorth.com' },
+        { name: 'NPS — Old North Church', url: 'https://www.nps.gov/places/old-north-church.htm' },
+        { name: 'Wikipedia — Old North Church', url: 'https://en.wikipedia.org/wiki/Old_North_Church' },
+        { name: 'Library of Congress — Old North Church photos', url: 'https://www.loc.gov/pictures/search/?q=Old+North+Church+Boston' }
+      ]
+    },
+    'old-south-mh': {
+      name: 'Old South Meeting House', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/70/Old_South_Meeting_House_in_Boston_MA.jpg/960px-Old_South_Meeting_House_in_Boston_MA.jpg',
+      time: '45–60 min', admission: 'Museum Admission',
+      map: 'https://www.google.com/maps/search/?api=1&query=Old+South+Meeting+House+Boston+MA',
+      summary: 'Built in 1729, the Old South Meeting House was the largest building in colonial Boston and served as the gathering place for public meetings. On December 16, 1773, over 5,000 colonists assembled here — the largest indoor gathering in the colonies — to protest the Tea Act. Samuel Adams gave the signal, and the meeting erupted into the Boston Tea Party. The building was nearly demolished in the 1870s but was saved by 19th-century preservationists, making it one of the earliest historic preservation success stories in America. It now operates as a museum.',
+      sources: [
+        { name: 'Old South Meeting House', url: 'https://www.thefreedomtrail.org/trail/old-south-meeting-house' },
+        { name: 'NPS — Old South Meeting House', url: 'https://www.nps.gov/nr/travel/pwwmh/ma4.htm' },
+        { name: 'Wikipedia — Old South Meeting House', url: 'https://en.wikipedia.org/wiki/Old_South_Meeting_House' },
+        { name: 'Boston Tea Party history', url: 'https://www.bostonteapartyship.com/the-boston-tea-party' }
+      ]
+    },
+    'adams-nhp': {
+      name: 'Adams National Historical Park', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/Adams_National_Historical_Park_ADAM4833.jpg/960px-Adams_National_Historical_Park_ADAM4833.jpg',
+      time: '2–3 hrs', admission: 'Seasonal Admission',
+      map: 'https://www.google.com/maps/search/?api=1&query=Adams+National+Historical+Park+Quincy+MA',
+      summary: 'Adams National Historical Park in Quincy, Massachusetts, preserves the homes and legacy of two U.S. presidents — John Adams (2nd president) and John Quincy Adams (6th president) — and four generations of the Adams family. The park includes the birthplaces of both presidents, and "Peacefield," the family\'s "Old House" where they lived for over a century. John Adams and his wife Abigail are buried in the nearby United First Parish Church crypt. The park tells the story of the Adams family\'s profound impact on American democracy, diplomacy, and letters from 1720 to 1927.',
+      sources: [
+        { name: 'NPS — Adams NHP', url: 'https://www.nps.gov/adam' },
+        { name: 'Wikipedia — Adams NHP', url: 'https://en.wikipedia.org/wiki/Adams_National_Historical_Park' },
+        { name: 'Library of Congress — Adams family papers', url: 'https://www.loc.gov/collections/adams-family-papers/' },
+        { name: 'White House — John Adams biography', url: 'https://www.whitehouse.gov/about-the-white-house/presidents/john-adams/' }
+      ]
+    },
+    'stone-library': {
+      name: 'Stone Library', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d8/Adams_National_Park_Stone_Library.jpg/960px-Adams_National_Park_Stone_Library.jpg',
+      time: '20–30 min', admission: 'Included with Tour',
+      map: 'https://www.google.com/maps/search/?api=1&query=Stone+Library+Quincy+MA',
+      summary: 'The Stone Library at Peacefield was built in 1870 by Charles Francis Adams, son of John Quincy Adams, to fulfill his father\'s wish for a fireproof building to house the family\'s vast collection of books and manuscripts. It holds over 14,000 volumes in 14 languages, including the personal libraries of John Adams and John Quincy Adams. The collection includes rare books, government documents, and family papers spanning 150 years of American history. The library was designed by architect Edward C. Cabot and is constructed of Quincy granite, with cast-iron shelving.',
+      sources: [
+        { name: 'NPS — Stone Library', url: 'https://www.nps.gov/places/stone-library.htm' },
+        { name: 'Library of Congress HABS — Stone Library', url: 'https://www.loc.gov/pictures/item/ma0435/' },
+        { name: 'Wikipedia — Adams NHP: Stone Library', url: 'https://en.wikipedia.org/wiki/Adams_National_Historical_Park#Stone_Library' }
+      ]
+    },
+    'plymouth-rock': {
+      name: 'Plymouth Rock', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f1/Plymouth_Rock_Monument.jpg/960px-Plymouth_Rock_Monument.jpg',
+      time: '15–30 min', admission: 'Free',
+      map: 'https://www.google.com/maps/search/?api=1&query=Plymouth+Rock+Plymouth+MA',
+      summary: 'Plymouth Rock is the traditional disembarkation site of the Mayflower Pilgrims who founded Plymouth Colony in December 1620. The rock was first identified as the landing site in 1741 by 94-year-old Elder Thomas Faunce, whose father arrived in Plymouth in 1623. The rock has been moved several times and was broken in half during an 1834 move; its upper portion now rests under a monumental granite portico designed by the renowned architectural firm McKim, Mead & White (1914–1921). The rock bears the engraved date "1620" and is one of the most visited historic sites in Massachusetts.',
+      sources: [
+        { name: 'Pilgrim Hall Museum — Plymouth Rock', url: 'https://www.pilgrimhall.org' },
+        { name: 'Wikipedia — Plymouth Rock', url: 'https://en.wikipedia.org/wiki/Plymouth_Rock' },
+        { name: 'Commonwealth of Massachusetts — Plymouth Rock', url: 'https://www.mass.gov/locations/plymouth-rock' },
+        { name: 'Library of Congress — Plymouth Rock photos', url: 'https://www.loc.gov/pictures/search/?q=Plymouth+Rock' }
+      ]
+    },
+    'mayflower-ii': {
+      name: 'Mayflower II', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Plymouth_Mayflower_II.jpg/960px-Plymouth_Mayflower_II.jpg',
+      time: '60–90 min', admission: 'Admission',
+      map: 'https://www.google.com/maps/search/?api=1&query=Mayflower+II+Plymouth+MA',
+      summary: 'Mayflower II is a full-scale reproduction of the original Mayflower ship, built in Devon, England, and sailed across the Atlantic in 1957 to commemorate the Pilgrims\' 1620 voyage. The 106.5-foot ship features three masts, a 22.5-foot beam, and is constructed of English oak with traditional shipbuilding techniques. It is owned by Plimoth Patuxet (formerly Plimoth Plantation) and berthed at State Pier in Plymouth Harbor. Costumed interpreters bring the ship\'s history to life. The ship underwent a major restoration at the Mystic Seaport Museum from 2012 to 2020.',
+      sources: [
+        { name: 'Plimoth Patuxet — Mayflower II', url: 'https://plimoth.org' },
+        { name: 'Wikipedia — Mayflower II', url: 'https://en.wikipedia.org/wiki/Mayflower_II' },
+        { name: 'Mystic Seaport — Mayflower II restoration', url: 'https://www.mysticseaport.org/mayflower-ii/' },
+        { name: 'Mayflower history — passenger list and voyage', url: 'https://mayflowerhistory.com/voyage' }
+      ]
+    }
+  };
+
+  function openModal(key) {
+    const d = modalData[key];
+    if (!d) return;
+    const overlay = document.getElementById('modalOverlay');
+    const imgEl = document.getElementById('modalImg');
+    const bodyEl = document.getElementById('modalBody');
+
+    imgEl.innerHTML = `<img src="${d.img}" alt="${escHtml(d.name)}" onerror="this.parentElement.innerHTML='<div class=img-placeholder>${escHtml(d.name.slice(0,2))}</div>'"><button class="modal-close" onclick="closeModal()">&times;</button>`;
+
+    bodyEl.innerHTML = `
+      <h2>${escHtml(d.name)}</h2>
+      <div class="modal-meta">
+        <span>&#9200; ${d.time}</span>
+        <span>&#9906; ${d.admission}</span>
+        <a class="map-link" href="${d.map}" target="_blank" rel="noopener">&#128205; Google Maps</a>
+      </div>
+      <h3>Historic Summary</h3>
+      <div class="modal-summary">${d.summary}</div>
+      <h3>Primary Sources &amp; Further Reading</h3>
+      <ul class="primary-sources">
+        ${d.sources.map(s => `<li><span class="source-icon">&#8599;</span><span class="source-text"><a href="${s.url}" target="_blank" rel="noopener">${escHtml(s.name)}</a></span></li>`).join('')}
+      </ul>
+    `;
+    overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeModal(e) {
+    if (e && e.target !== document.getElementById('modalOverlay') && e.target.className !== 'modal-close') return;
+    document.getElementById('modalOverlay').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal(); } });
+
+  // ---- Overview Map ----
+  const locations = [
+    { id: 'logan', name: 'Boston Logan Airport', day: 1, lat: 42.3656, lng: -71.0096 },
+    { id: 'lex-green', name: 'Lexington Green', day: 2, lat: 42.4487, lng: -71.2300 },
+    { id: 'buckman', name: 'Buckman Tavern', day: 2, lat: 42.4488, lng: -71.2305 },
+    { id: 'hancock', name: 'Hancock-Clarke House', day: 2, lat: 42.4496, lng: -71.2296 },
+    { id: 'battle-road', name: 'Battle Road Trail', day: 2, lat: 42.4420, lng: -71.2920 },
+    { id: 'hartwell', name: 'Hartwell Tavern', day: 2, lat: 42.4310, lng: -71.2810 },
+    { id: 'old-north-bridge', name: 'Old North Bridge', day: 2, lat: 42.4690, lng: -71.3506 },
+    { id: 'old-manse', name: 'Old Manse', day: 3, lat: 42.4685, lng: -71.3490 },
+    { id: 'orchard', name: 'Orchard House', day: 3, lat: 42.4571, lng: -71.3328 },
+    { id: 'sleepy-hollow', name: 'Sleepy Hollow Cemetery', day: 3, lat: 42.4670, lng: -71.3260 },
+    { id: 'walden', name: 'Walden Pond', day: 3, lat: 42.4389, lng: -71.3344 },
+    { id: 'deerfield', name: 'Historic Deerfield', day: 4, lat: 42.5460, lng: -72.6050 },
+    { id: 'nantasket', name: 'Nantasket Beach', day: 4, lat: 42.2830, lng: -70.8700 },
+    { id: 'gardner', name: 'Gardner Museum', day: 5, lat: 42.3385, lng: -71.0989 },
+    { id: 'mfa', name: 'Museum of Fine Arts', day: 5, lat: 42.3393, lng: -71.0938 },
+    { id: 'beacon-hill', name: 'Beacon Hill', day: 5, lat: 42.3581, lng: -71.0658 },
+    { id: 'bunker-hill', name: 'Bunker Hill Monument', day: 5, lat: 42.3763, lng: -71.0608 },
+    { id: 'nantasket-day6', name: 'Nantasket Beach', day: 6, lat: 42.2830, lng: -70.8700 },
+    { id: 'plymouth-day6', name: 'Plymouth', day: 6, lat: 41.9580, lng: -70.6673 },
+    { id: 'boston-common', name: 'Boston Common', day: 7, lat: 42.3550, lng: -71.0654 },
+    { id: 'revere-house', name: 'Paul Revere House', day: 7, lat: 42.3637, lng: -71.0535 },
+    { id: 'old-north-church', name: 'Old North Church', day: 7, lat: 42.3664, lng: -71.0545 },
+    { id: 'old-south', name: 'Old South Meeting House', day: 7, lat: 42.3569, lng: -71.0580 },
+    { id: 'adams-nhp', name: 'Adams National Historical Park', day: 7, lat: 42.2550, lng: -71.0070 },
+    { id: 'stone-library', name: 'Stone Library', day: 7, lat: 42.2555, lng: -71.0065 },
+    { id: 'plymouth-rock', name: 'Plymouth Rock', day: 8, lat: 41.9581, lng: -70.6625 },
+    { id: 'mayflower', name: 'Mayflower II', day: 8, lat: 41.9590, lng: -70.6610 },
+    { id: 'logan-depart', name: 'Boston Logan Airport', day: 9, lat: 42.3656, lng: -71.0096 }
+  ];
+
+  const dayColors = [
+    '#9d4e3c', '#e07a2f', '#d4a030', '#5b8c5a',
+    '#2a7b9b', '#6b5d9e', '#c44d64', '#4f7c5c', '#888888'
+  ];
+  const dayLabels = ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7', 'Day 8', 'Day 9'];
+
+  const mapEl = document.getElementById('tripMap');
+  if (mapEl) {
+    const map = L.map('tripMap', { scrollWheelZoom: false }).setView([42.34, -71.05], 9);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a>'
+    }).addTo(map);
+
+    // Group by day for polylines
+    const dayGroups = {};
+    locations.forEach(loc => {
+      if (!dayGroups[loc.day]) dayGroups[loc.day] = [];
+      dayGroups[loc.day].push(loc);
+    });
+
+    // Add markers and polylines per day
+    Object.keys(dayGroups).forEach(d => {
+      const day = parseInt(d);
+      const pts = dayGroups[day];
+      const color = dayColors[day - 1];
+
+      // polyline
+      const latlngs = pts.map(p => [p.lat, p.lng]);
+      L.polyline(latlngs, { color, weight: 3, opacity: 0.7 }).addTo(map);
+
+      // markers
+      pts.forEach(p => {
+        const markerColor = day === 9 ? '#888' : color;
+        L.circleMarker([p.lat, p.lng], {
+          radius: 8, fillColor: markerColor, color: '#fff',
+          weight: 2, opacity: 1, fillOpacity: 0.9
+        }).addTo(map)
+          .bindPopup(`<strong>${p.name}</strong><br>${dayLabels[day - 1]}`);
+      });
+    });
+
+    // Legend
+    const legend = document.getElementById('mapLegend');
+    if (legend) {
+      dayLabels.forEach((label, i) => {
+        const item = document.createElement('span');
+        item.className = 'map-legend-item';
+        item.innerHTML = `<span class="map-legend-dot" style="background:${dayColors[i]}"></span>${label}`;
+        legend.appendChild(item);
+      });
+    }
+
+    // Enable scroll on click/tap
+    mapEl.addEventListener('click', () => { map.scrollWheelZoom.enable(); });
+    mapEl.addEventListener('mouseleave', () => { map.scrollWheelZoom.disable(); });
+  }
+</script>
+
+</body>
+</html>
