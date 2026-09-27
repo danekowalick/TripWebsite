@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Midnight Gallery</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="vignette" aria-hidden="true"></div>
+
+  <main id="gallery" class="gallery" aria-label="Art gallery">
+    <!-- The opening room: gallery title. Artwork rooms are added by gallery.js -->
+    <section class="cell intro-cell" tabindex="0" aria-label="Welcome">
+      <div class="intro">
+        <p class="eyebrow">Permanent Collection</p>
+        <h1 class="title">The Midnight Gallery</h1>
+        <p class="subtitle">Each work rests in darkness. Move your light across it to see.</p>
+        <p class="nav-hint">
+          Use your <span class="keys"><kbd>&#8592;</kbd><kbd>&#8593;</kbd><kbd>&#8595;</kbd><kbd>&#8594;</kbd></span>
+          arrow keys to wander the gallery in any direction.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <!-- Little position map, lower-right -->
+  <nav id="minimap" class="minimap" aria-label="Gallery map"></nav>
+
+  <script src="gallery.js"></script>
+</body>
+</html>

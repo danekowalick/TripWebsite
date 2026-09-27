@@ -3,33 +3,2523 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>The Midnight Gallery</title>
+  <title>New England 2026 &mdash; Family Trip Itinerary</title>
+  <meta name="description" content="Day-by-day itinerary for the October 3-11, 2026 New England family trip: Deerfield, the Berkshires, Concord, Lexington, Quincy, Boston and Plymouth." />
+  <meta name="theme-color" content="#1a2238" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="New England 2026 — Family Trip Itinerary" />
+  <meta property="og:description" content="October 3-11, 2026. Deerfield, the Berkshires, Concord, Lexington, Quincy, Boston and Plymouth — tickets, tour times and logistics in one place." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231a2238'/%3E%3Cpath d='M16 6l2.6 7.6H26l-6 4.8 2.2 7.6L16 21.4 9.8 26 12 18.4 6 13.6h7.4z' fill='%23b8933b'/%3E%3C/svg%3E" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+  <style>
+    /* ============ TOKENS ============ */
+    :root {
+      --navy: #1a2238;
+      --navy-soft: #2a3a5c;
+      --cream: #f5f0e8;
+      --warm: #e8d5b7;
+      --accent: #8a4132;
+      --accent-light: #b05a43;
+      /* Gold only ever sits on the navy panels or acts as a graphic accent,
+         so it stays bright — it is not used as body text on cream. */
+      --gold: #b8933b;
+      --text: #2c2418;
+      --text-light: #5d5142;
+      --muted: #6a6153;
+      --card-bg: #ffffff;
+      --surface: #ffffff;
+      --rule: rgba(0, 0, 0, 0.08);
+      /* Heading colour, which flips with the theme. */
+      --heading: #1a2238;
+      /* Text that always sits on the fixed navy panels (nav, hero, footer),
+         so it must NOT follow the theme — those backgrounds never change. */
+      --on-dark: #f5f0e8;
+      --on-dark-soft: #e8d5b7;
+      --shadow: rgba(26, 34, 56, 0.08);
+      --shadow-lg: rgba(26, 34, 56, 0.14);
+      --free-bg: rgba(45, 107, 66, 0.1);
+      --free-fg: #1f5733;
+      --booked-fg: #6f5718;
+      --radius: 12px;
+      --max-w: 1100px;
+      --nav-h: 56px;
+
+      /* Day colours — shared by the badges, the map polylines and the legend */
+      --day-1: #9d4e3c;
+      --day-2: #e07a2f;
+      --day-3: #d4a030;
+      --day-4: #5b8c5a;
+      --day-5: #2a7b9b;
+      --day-6: #6b5d9e;
+      --day-7: #c44d64;
+      --day-8: #4f7c5c;
+      --day-9: #6f6f78;
+
+      /* z-index scale */
+      --z-nav: 100;
+      --z-float: 90;
+      --z-modal: 200;
+    }
+
+    /* Colour-vision-friendly palette (swaps the red/green pairs for blue/amber) */
+    body.deuteranomaly {
+      --accent: #2a6b9b;
+      --accent-light: #4a8bbb;
+      --gold: #c4903a;
+      --free-bg: rgba(42, 107, 155, 0.1);
+      --free-fg: #1d4f74;
+      --day-1: #1f5f87;
+      --day-2: #e07a2f;
+      --day-3: #d4a030;
+      --day-4: #7a6a2e;
+      --day-5: #2a7b9b;
+      --day-6: #6b5d9e;
+      --day-7: #8c4a7a;
+      --day-8: #4a6f8c;
+      --day-9: #6f6f78;
+    }
+
+    /* The colour-vision palette above is tuned for a light page. On a dark one
+       those blues and olives go too dark to read, so lift them. */
+    :root[data-theme="dark"] body.deuteranomaly {
+      --accent: #74b6df;
+      --accent-light: #93cbee;
+      --free-bg: rgba(116, 182, 223, 0.16);
+      --free-fg: #8fc9ea;
+      --booked-fg: #e0bb62;
+      --gold: #d0a94f;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) body.deuteranomaly {
+        --accent: #74b6df;
+        --accent-light: #93cbee;
+        --free-bg: rgba(116, 182, 223, 0.16);
+        --free-fg: #8fc9ea;
+        --booked-fg: #e0bb62;
+        --gold: #d0a94f;
+      }
+    }
+
+    /* Dark mode: automatic, with an explicit override either way */
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --cream: #14161d;
+        --warm: #2a2f3d;
+        --text: #e9e4da;
+        --text-light: #b3ab9d;
+        --muted: #a79f8d;
+        --card-bg: #1d212b;
+        --surface: #1d212b;
+        --rule: rgba(255, 255, 255, 0.1);
+        --shadow: rgba(0, 0, 0, 0.5);
+        --shadow-lg: rgba(0, 0, 0, 0.6);
+        --accent: #e08a72;
+        --accent-light: #eda891;
+        --gold: #d0a94f;
+        --free-bg: rgba(102, 187, 132, 0.14);
+        --free-fg: #8ed4a8;
+        --heading: #e9ddc6;
+        --booked-fg: #e0bb62;
+      }
+    }
+    :root[data-theme="dark"] {
+      --cream: #14161d;
+      --warm: #2a2f3d;
+      --text: #e9e4da;
+      --text-light: #b3ab9d;
+      --muted: #a79f8d;
+      --card-bg: #1d212b;
+      --surface: #1d212b;
+      --rule: rgba(255, 255, 255, 0.1);
+      --shadow: rgba(0, 0, 0, 0.5);
+      --shadow-lg: rgba(0, 0, 0, 0.6);
+      --accent: #e08a72;
+      --accent-light: #eda891;
+      --gold: #d0a94f;
+      --free-bg: rgba(102, 187, 132, 0.14);
+      --free-fg: #8ed4a8;
+      --heading: #e9ddc6;
+        --booked-fg: #e0bb62;
+    }
+
+    /* ============ BASE ============ */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--cream);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+    h1, h2, h3, h4 { font-family: 'Playfair Display', Georgia, serif; font-weight: 600; line-height: 1.2; }
+    a { color: var(--accent); text-decoration: none; transition: color 0.2s; }
+    a:hover { color: var(--accent-light); text-decoration: underline; }
+    img { max-width: 100%; display: block; }
+    button { cursor: pointer; font: inherit; }
+    ul, ol { list-style: none; }
+
+    :where(a, button, [tabindex]):focus-visible {
+      outline: 3px solid var(--gold);
+      outline-offset: 2px;
+      border-radius: 4px;
+    }
+
+    .icon { width: 1em; height: 1em; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+    .sr-only {
+      position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+      overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+    }
+    .skip-link {
+      position: absolute; left: 0.5rem; top: -3rem; z-index: 300;
+      background: #1a2238; color: #fff; padding: 0.6rem 1rem; border-radius: 0 0 8px 8px;
+      border: 1px solid var(--gold);
+      font-size: 0.85rem; font-weight: 500; transition: top 0.2s;
+    }
+    .skip-link:focus { top: 0; text-decoration: none; }
+
+    .container { max-width: var(--max-w); margin: 0 auto; padding: 0 1.5rem; }
+
+    /* ============ NAV ============ */
+    nav.topbar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: var(--z-nav);
+      background: rgba(26, 34, 56, 0.95); backdrop-filter: blur(12px);
+      padding: 0 1rem; height: var(--nav-h);
+      display: flex; align-items: center; gap: 0.5rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    nav.topbar .brand {
+      font-family: 'Playfair Display', Georgia, serif; font-size: 1.05rem;
+      color: var(--on-dark); letter-spacing: 0.02em; white-space: nowrap;
+    }
+    nav.topbar .brand span { color: var(--gold); }
+    .days-nav { display: flex; gap: 0.25rem; overflow-x: auto; scrollbar-width: none; flex: 1; justify-content: flex-end; }
+    .days-nav::-webkit-scrollbar { display: none; }
+    .days-nav a {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 36px; height: 36px; border-radius: 50%;
+      font-size: 0.8rem; font-weight: 500;
+      color: rgba(255, 255, 255, 0.62); background: transparent;
+      transition: background 0.2s, color 0.2s; flex-shrink: 0; text-decoration: none;
+    }
+    .days-nav a:hover { color: #fff; background: rgba(255, 255, 255, 0.14); text-decoration: none; }
+    .days-nav a[aria-current="true"] { color: #fff; background: var(--accent); }
+    .days-nav a.is-today::after {
+      content: ''; position: absolute; margin-top: 1.6rem;
+      width: 4px; height: 4px; border-radius: 50%; background: var(--gold);
+    }
+    .nav-tools { display: flex; gap: 0.3rem; flex-shrink: 0; }
+    .icon-btn {
+      display: grid; place-items: center;
+      width: 36px; height: 36px; border-radius: 8px;
+      background: none; border: 1px solid rgba(255, 255, 255, 0.28);
+      color: rgba(255, 255, 255, 0.75); font-size: 1rem;
+      transition: border-color 0.2s, color 0.2s, background 0.2s;
+    }
+    .icon-btn:hover { border-color: var(--gold); color: var(--gold); }
+    .icon-btn[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .icon-btn .icon { width: 1.05rem; height: 1.05rem; }
+
+    /* ============ HERO ============ */
+    .hero {
+      margin-top: var(--nav-h);
+      background: linear-gradient(135deg, var(--navy) 0%, var(--navy-soft) 50%, #3d4f72 100%);
+      color: var(--on-dark); padding: 4.5rem 1.5rem 3.5rem; text-align: center;
+      position: relative; overflow: hidden;
+    }
+    .hero::after {
+      content: ''; position: absolute; inset: 0; pointer-events: none;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 5L35 20H50L38 30L42 45L30 36L18 45L22 30L10 20H25Z' fill='rgba(255,255,255,0.03)'/%3E%3C/svg%3E") repeat;
+      opacity: 0.35;
+    }
+    .hero-content { position: relative; z-index: 1; max-width: 720px; margin: 0 auto; }
+    .hero .eyebrow {
+      font-size: 0.72rem; letter-spacing: 0.22em; text-transform: uppercase;
+      color: var(--gold); font-weight: 600; margin-bottom: 0.75rem;
+    }
+    .hero h1 { font-size: clamp(2.1rem, 6vw, 3.5rem); margin-bottom: 0.5rem; }
+    .hero .subtitle { font-size: 1.05rem; color: var(--on-dark-soft); font-weight: 300; margin-bottom: 1.5rem; }
+    .hero .meta {
+      display: flex; justify-content: center; gap: 0.6rem 1.75rem; flex-wrap: wrap;
+      font-size: 0.85rem; color: rgba(255, 255, 255, 0.72);
+    }
+    .hero .meta li { display: flex; align-items: center; gap: 0.4rem; }
+    .hero .countdown {
+      display: inline-block; margin-top: 1.25rem; padding: 0.3rem 0.9rem;
+      border-radius: 999px; background: rgba(184, 147, 59, 0.18);
+      border: 1px solid rgba(184, 147, 59, 0.5); color: var(--on-dark-soft);
+      font-size: 0.8rem; font-weight: 500;
+    }
+    .hero-actions { display: flex; justify-content: center; gap: 0.6rem; flex-wrap: wrap; margin-top: 1.5rem; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 0.45rem;
+      min-height: 44px; padding: 0.6rem 1.15rem; border-radius: 8px;
+      font-size: 0.85rem; font-weight: 500; font-family: inherit;
+      text-decoration: none; transition: background 0.2s, border-color 0.2s;
+      border: 1px solid rgba(255, 255, 255, 0.28); background: rgba(255, 255, 255, 0.12); color: #fff;
+    }
+    .btn:hover { background: rgba(255, 255, 255, 0.22); border-color: rgba(255, 255, 255, 0.45); color: #fff; text-decoration: none; }
+    .btn-ghost { background: transparent; }
+  </style>
+  <style>
+    /* ============ SECTION SHELL ============ */
+    .band { padding: 3.5rem 0; border-bottom: 1px solid var(--rule); }
+    .band:last-of-type { border-bottom: none; }
+    .band > .container > h2 {
+      font-size: clamp(1.4rem, 3vw, 1.9rem); color: var(--heading); margin-bottom: 0.4rem;
+    }
+    .band .band-sub { color: var(--text-light); font-size: 0.92rem; margin-bottom: 2rem; max-width: 62ch; }
+
+    /* ============ LOGISTICS ============ */
+    .logistics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 1.25rem; }
+    .info-card {
+      background: var(--card-bg); border-radius: var(--radius); padding: 1.25rem;
+      box-shadow: 0 2px 12px var(--shadow); border-top: 3px solid var(--gold);
+    }
+    .info-card h3 {
+      font-size: 1rem; color: var(--accent); display: flex; align-items: center; gap: 0.5rem;
+      margin-bottom: 0.75rem; font-family: 'Inter', sans-serif; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.75rem;
+    }
+    .info-card h3 .icon { width: 1.1rem; height: 1.1rem; }
+    .info-card dl { display: grid; gap: 0.65rem; }
+    .info-card dt { font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .info-card dd { font-size: 0.9rem; color: var(--text); }
+    .info-card dd .addr { display: block; color: var(--text-light); font-size: 0.85rem; }
+    .info-card ul.plain { display: grid; gap: 0.55rem; }
+    .info-card ul.plain li { display: flex; gap: 0.55rem; font-size: 0.9rem; align-items: flex-start; }
+    .info-card ul.plain .icon { margin-top: 0.28em; color: var(--accent); }
+
+    /* ============ TICKETS TABLE ============ */
+    .table-wrap { overflow-x: auto; border-radius: var(--radius); box-shadow: 0 2px 12px var(--shadow); background: var(--card-bg); }
+    table.tickets { width: 100%; border-collapse: collapse; font-size: 0.88rem; min-width: 640px; }
+    table.tickets caption { text-align: left; padding: 1rem 1.25rem 0; color: var(--text-light); font-size: 0.85rem; }
+    table.tickets th, table.tickets td { padding: 0.8rem 1rem; text-align: left; border-bottom: 1px solid var(--rule); vertical-align: top; }
+    table.tickets thead th {
+      font-family: 'Inter', sans-serif; font-size: 0.72rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-light);
+      background: var(--warm); border-bottom: 2px solid var(--rule);
+    }
+    table.tickets tbody tr:last-child td { border-bottom: none; }
+    table.tickets td .when { display: block; color: var(--text-light); font-size: 0.82rem; }
+    table.tickets td.price { white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .book-link { display: inline-flex; align-items: center; gap: 0.3rem; white-space: nowrap; font-weight: 500; }
+
+    /* ============ MAP ============ */
+    .map-overview { display: none; }
+    .map-overview.visible { display: block; }
+    #tripMap { height: 520px; border-radius: var(--radius); box-shadow: 0 4px 24px var(--shadow-lg); border: 2px solid var(--warm); }
+    .map-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.6rem 1.25rem; margin-top: 1.25rem; }
+    .map-legend-item { display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; font-weight: 500; color: var(--text-light); }
+    .map-legend-dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.85); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25); }
+    .leaflet-popup-content { font-family: 'Inter', sans-serif; font-size: 0.85rem; }
+    .leaflet-popup-content strong { color: #1a2238; }
+
+    /* ============ DAY SECTIONS ============ */
+    .day-section { padding: 3.5rem 0; border-bottom: 1px solid var(--rule); scroll-margin-top: calc(var(--nav-h) + 1rem); }
+    .day-section:last-of-type { border-bottom: none; }
+    .day-header { margin-bottom: 2rem; }
+    .day-number {
+      display: inline-flex; align-items: center; gap: 0.6rem;
+      font-size: 0.78rem; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.15em; color: var(--day-accent, var(--accent)); margin-bottom: 0.5rem;
+    }
+    .day-number::before { content: ''; width: 1.75rem; height: 3px; border-radius: 2px; background: var(--day-accent, var(--accent)); }
+    .day-header h2 { font-size: clamp(1.4rem, 3vw, 1.95rem); color: var(--heading); }
+    .day-date { font-size: 0.9rem; color: var(--text-light); margin-top: 0.3rem; }
+    .today-badge {
+      display: none; margin-left: 0.5rem; padding: 0.1rem 0.5rem; border-radius: 999px;
+      background: var(--gold); color: #1a2238; font-size: 0.68rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.08em; vertical-align: middle;
+    }
+    .day-section.is-today .today-badge { display: inline-block; }
+    .day-section.is-today { background: rgba(184, 147, 59, 0.06); }
+    .day-summary {
+      background: rgba(154, 142, 126, 0.1); border-left: 3px solid var(--day-accent, var(--gold));
+      padding: 0.9rem 1.15rem; border-radius: 0 var(--radius) var(--radius) 0;
+      margin-top: 1rem; font-size: 0.94rem; color: var(--text-light); max-width: 70ch;
+    }
+    .day-flags { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; }
+    .day-flags li {
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      font-size: 0.78rem; font-weight: 500; padding: 0.3rem 0.7rem; border-radius: 999px;
+      background: var(--card-bg); border: 1px solid var(--rule); color: var(--text-light);
+    }
+    .day-flags .icon { width: 0.95rem; height: 0.95rem; color: var(--accent); }
+
+    /* ============ NOTICE ============ */
+    .notice {
+      display: flex; gap: 0.7rem; align-items: flex-start;
+      margin-top: 1.25rem; padding: 0.85rem 1.1rem; border-radius: var(--radius);
+      background: rgba(184, 147, 59, 0.12); border: 1px solid rgba(184, 147, 59, 0.42);
+      font-size: 0.87rem; color: var(--text); max-width: 72ch;
+    }
+    .notice .icon { width: 1.15rem; height: 1.15rem; color: var(--gold); margin-top: 0.15em; }
+    .notice strong { font-weight: 600; }
+
+    /* ============ TIMELINE ============ */
+    .timeline { margin: 0 0 2rem; padding-left: 0.25rem; max-width: 74ch; }
+    .timeline li { display: grid; grid-template-columns: 5.25rem 1fr; gap: 0.9rem; position: relative; padding-bottom: 1.1rem; }
+    .timeline li:last-child { padding-bottom: 0; }
+    .timeline li::before {
+      content: ''; position: absolute; left: 5.25rem; top: 0.55rem; bottom: -0.3rem;
+      width: 2px; margin-left: 4px; background: var(--rule);
+    }
+    .timeline li:last-child::before { display: none; }
+    .timeline .t-time {
+      font-size: 0.8rem; font-weight: 600; color: var(--day-accent, var(--accent));
+      text-align: right; font-variant-numeric: tabular-nums; padding-top: 0.1rem;
+    }
+    .timeline .t-body { position: relative; padding-left: 1.1rem; }
+    .timeline .t-body::before {
+      content: ''; position: absolute; left: -0.28rem; top: 0.5rem;
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--day-accent, var(--accent)); box-shadow: 0 0 0 3px var(--cream);
+    }
+    .timeline .t-what { font-weight: 600; font-size: 0.93rem; }
+    .timeline .t-detail { font-size: 0.86rem; color: var(--text-light); }
+
+    /* The day colours are tuned for the map, where they sit on light tiles.
+       Used as text on a dark page they're too dark, so lift them — the map
+       keeps reading the unmodified --day-N values. */
+    :root[data-theme="dark"] .day-number,
+    :root[data-theme="dark"] .timeline .t-time,
+    :root[data-theme="dark"] .timeline .t-body::before {
+      color: color-mix(in srgb, var(--day-accent, var(--accent)) 60%, #fff);
+    }
+    :root[data-theme="dark"] .timeline .t-body::before,
+    :root[data-theme="dark"] .day-number::before {
+      background: color-mix(in srgb, var(--day-accent, var(--accent)) 60%, #fff);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) .day-number,
+      :root:not([data-theme="light"]) .timeline .t-time {
+        color: color-mix(in srgb, var(--day-accent, var(--accent)) 60%, #fff);
+      }
+      :root:not([data-theme="light"]) .timeline .t-body::before,
+      :root:not([data-theme="light"]) .day-number::before {
+        background: color-mix(in srgb, var(--day-accent, var(--accent)) 60%, #fff);
+      }
+    }
+  </style>
+  <style>
+    /* ============ EVENT CARDS ============ */
+    .events-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
+    .event-card {
+      background: var(--card-bg); border-radius: var(--radius); overflow: hidden;
+      box-shadow: 0 2px 12px var(--shadow);
+      transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s;
+      display: flex; flex-direction: column;
+    }
+    .event-card.is-clickable { cursor: pointer; }
+    .event-card:hover { transform: translateY(-4px); box-shadow: 0 8px 30px var(--shadow-lg); }
+    .event-card:focus-within { box-shadow: 0 0 0 3px var(--gold), 0 8px 30px var(--shadow-lg); }
+    .card-img { height: 180px; overflow: hidden; background: var(--warm); position: relative; }
+    .card-img img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
+    .event-card:hover .card-img img { transform: scale(1.05); }
+    .img-placeholder {
+      width: 100%; height: 100%; display: grid; place-items: center;
+      background: linear-gradient(135deg, var(--navy), var(--accent));
+      color: var(--on-dark); font-family: 'Playfair Display', Georgia, serif;
+      font-size: 2rem; font-style: italic; opacity: 0.7;
+    }
+    .card-time {
+      position: absolute; left: 0.75rem; bottom: 0.75rem;
+      display: inline-flex; align-items: center; gap: 0.3rem;
+      padding: 0.25rem 0.6rem; border-radius: 6px;
+      background: rgba(26, 34, 56, 0.88); color: #fff;
+      font-size: 0.75rem; font-weight: 600; letter-spacing: 0.02em;
+    }
+    .card-time .icon { width: 0.85rem; height: 0.85rem; }
+    .card-body { padding: 1.15rem; display: flex; flex-direction: column; gap: 0.7rem; flex: 1; }
+    .card-body h3 { font-size: 1.08rem; color: var(--heading); }
+    .card-body .summary { font-size: 0.88rem; color: var(--text-light); line-height: 1.55; }
+    .card-body .day-note { font-size: 0.88rem; color: var(--text-light); }
+    .tags { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+    .tag {
+      display: inline-flex; align-items: center; gap: 0.25rem;
+      font-size: 0.75rem; padding: 0.22rem 0.6rem; border-radius: 5px;
+      background: rgba(154, 142, 126, 0.14); color: var(--text-light); white-space: nowrap;
+    }
+    .tag .icon { width: 0.85rem; height: 0.85rem; }
+    .tag.admission { background: rgba(157, 78, 60, 0.12); color: var(--accent); }
+    .tag.free { background: var(--free-bg); color: var(--free-fg); }
+    .tag.booked { background: rgba(184, 147, 59, 0.16); color: var(--booked-fg); }
+    .card-links { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: auto; }
+    .card-links a, .details-btn {
+      font-size: 0.78rem; display: inline-flex; align-items: center; gap: 0.3rem;
+      min-height: 34px; padding: 0.35rem 0.7rem; border-radius: 6px;
+      border: 1px solid rgba(157, 78, 60, 0.28); background: transparent;
+      color: var(--accent); transition: background 0.2s, color 0.2s, border-color 0.2s;
+      font-family: inherit; font-weight: 500;
+    }
+    .card-links a:hover, .details-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); text-decoration: none; }
+    .details-btn { border-style: solid; border-color: var(--accent); }
+    .card-links .icon { width: 0.9rem; height: 0.9rem; }
+
+    /* ============ MODAL ============ */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: var(--z-modal);
+      background: rgba(0, 0, 0, 0.62); backdrop-filter: blur(6px);
+      display: none; align-items: flex-start; justify-content: center;
+      padding: 1.5rem; overflow-y: auto;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--card-bg); border-radius: 16px;
+      max-width: 780px; width: 100%; margin: auto;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.4);
+      animation: modalIn 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+      position: relative;
+    }
+    @keyframes modalIn { from { opacity: 0; transform: translateY(24px) scale(0.98); } to { opacity: 1; transform: none; } }
+    .modal-img { width: 100%; height: 300px; overflow: hidden; background: var(--warm); border-radius: 16px 16px 0 0; }
+    .modal-img img { width: 100%; height: 100%; object-fit: cover; }
+    .modal-close {
+      position: absolute; top: 0.85rem; right: 0.85rem; z-index: 2;
+      width: 44px; height: 44px; border-radius: 50%; border: none;
+      background: rgba(0, 0, 0, 0.55); color: #fff;
+      display: grid; place-items: center; transition: background 0.2s;
+    }
+    .modal-close:hover { background: rgba(0, 0, 0, 0.85); }
+    .modal-close .icon { width: 1.25rem; height: 1.25rem; stroke-width: 2.25; }
+    .modal-body { padding: 1.75rem; }
+    .modal-body h2 { font-size: 1.55rem; color: var(--heading); margin-bottom: 0.5rem; }
+    .modal-meta { font-size: 0.85rem; color: var(--text-light); margin-bottom: 1.25rem; display: flex; gap: 1rem; flex-wrap: wrap; }
+    .modal-meta li { display: flex; align-items: center; gap: 0.35rem; }
+    .modal-meta .icon { width: 1rem; height: 1rem; color: var(--accent); }
+    .modal-body h3 { font-size: 1.05rem; color: var(--heading); margin: 1.5rem 0 0.5rem; }
+    .modal-summary { font-size: 0.95rem; line-height: 1.7; }
+    .modal-summary p + p { margin-top: 0.8rem; }
+    .primary-sources { display: grid; }
+    .primary-sources li { padding: 0.6rem 0; border-bottom: 1px solid var(--rule); display: flex; gap: 0.7rem; align-items: flex-start; }
+    .primary-sources li:last-child { border-bottom: none; }
+    .primary-sources .source-icon {
+      flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%;
+      background: rgba(157, 78, 60, 0.12); color: var(--accent);
+      display: grid; place-items: center; margin-top: 1px;
+    }
+    .primary-sources .source-icon .icon { width: 0.8rem; height: 0.8rem; }
+    .primary-sources .source-text { font-size: 0.88rem; }
+
+    /* ============ FOOTER / FLOAT ============ */
+    footer { background: var(--navy); color: rgba(255, 255, 255, 0.58); text-align: center; padding: 2.25rem 1.5rem; font-size: 0.82rem; }
+    footer a { color: var(--gold); }
+    footer p + p { margin-top: 0.35rem; }
+    .scroll-top {
+      position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: var(--z-float);
+      width: 48px; height: 48px; border-radius: 50%;
+      background: var(--accent); color: #fff; border: none;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
+      transition: opacity 0.25s, transform 0.25s; opacity: 0; pointer-events: none;
+      display: grid; place-items: center;
+    }
+    .scroll-top.visible { opacity: 1; pointer-events: auto; }
+    .scroll-top:hover { transform: translateY(-3px); }
+    .scroll-top .icon { width: 1.25rem; height: 1.25rem; stroke-width: 2.25; }
+
+    /* ============ RESPONSIVE ============ */
+    @media (max-width: 700px) {
+      .container { padding: 0 1rem; }
+      nav.topbar { padding: 0 0.6rem; }
+      nav.topbar .brand { font-size: 0.9rem; }
+      .days-nav a { min-width: 34px; height: 34px; font-size: 0.75rem; }
+      .events-grid { grid-template-columns: 1fr; }
+      .hero { padding: 3rem 1rem 2.5rem; }
+      .day-section, .band { padding: 2.5rem 0; }
+      .modal-overlay { padding: 0.75rem; }
+      .modal-body { padding: 1.25rem; }
+      .modal-img { height: 210px; }
+      .modal-body h2 { font-size: 1.3rem; }
+      #tripMap { height: 380px; }
+      .timeline li { grid-template-columns: 4.25rem 1fr; gap: 0.6rem; }
+      .timeline li::before { left: 4.25rem; }
+
+      /* The tickets table restacks as one card per site rather than scrolling
+         sideways — column headers come back as labels via data-label. */
+      .table-wrap { overflow-x: visible; }
+      table.tickets { min-width: 0; }
+      table.tickets thead { display: none; }
+      table.tickets, table.tickets tbody, table.tickets tr, table.tickets th, table.tickets td { display: block; width: auto; }
+      table.tickets caption { padding: 0.9rem 1rem 0; }
+      table.tickets tr { padding: 1rem; border-bottom: 1px solid var(--rule); }
+      table.tickets tr:last-child { border-bottom: none; }
+      table.tickets th[scope="row"] {
+        font-family: 'Playfair Display', Georgia, serif; font-size: 1.05rem;
+        font-weight: 600; color: var(--text); padding: 0 0 0.6rem; border: none;
+      }
+      table.tickets td {
+        padding: 0.25rem 0; border: none;
+        display: grid; grid-template-columns: 5.25rem 1fr; gap: 0.6rem; align-items: start;
+      }
+      table.tickets td::before {
+        content: attr(data-label);
+        font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.07em;
+        color: var(--muted); font-weight: 600; padding-top: 0.3em;
+      }
+    }
+    @media (min-width: 701px) and (max-width: 940px) {
+      .events-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    /* ============ REDUCED MOTION ============ */
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+      .event-card:hover { transform: none; }
+      .event-card:hover .card-img img { transform: none; }
+    }
+
+    /* ============ PRINT ============ */
+    @media print {
+      :root { --cream: #fff; --card-bg: #fff; --text: #000; --text-light: #333; --rule: #bbb; }
+      nav.topbar, .scroll-top, .hero-actions, .nav-tools, .map-overview,
+      .details-btn, .hero::after, .countdown { display: none !important; }
+      body { background: #fff; color: #000; font-size: 11pt; }
+      .hero { margin-top: 0; background: none; color: #000; padding: 0 0 1.5rem; text-align: left; border-bottom: 2px solid #000; }
+      .hero .eyebrow, .hero .subtitle, .hero .meta { color: #333; }
+      .hero h1 { font-size: 22pt; }
+      .band, .day-section { padding: 1.25rem 0; page-break-inside: avoid; break-inside: avoid; }
+      .day-section.is-today { background: none; }
+      .event-card, .info-card, .notice, .timeline li { page-break-inside: avoid; break-inside: avoid; box-shadow: none; border: 1px solid #bbb; }
+      .notice, .timeline li { border: none; }
+      .card-img, .modal-overlay { display: none !important; }
+      .events-grid { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
+      table.tickets { min-width: 0; font-size: 9.5pt; }
+      .table-wrap { box-shadow: none; border: 1px solid #bbb; }
+      a { color: #000; text-decoration: underline; }
+      .card-links a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 7.5pt; color: #555; word-break: break-all; }
+      footer { background: none; color: #333; border-top: 1px solid #bbb; }
+    }
+  </style>
 </head>
 <body>
-  <div class="vignette" aria-hidden="true"></div>
 
-  <main id="gallery" class="gallery" aria-label="Art gallery">
-    <!-- The opening room: gallery title. Artwork rooms are added by gallery.js -->
-    <section class="cell intro-cell" tabindex="0" aria-label="Welcome">
-      <div class="intro">
-        <p class="eyebrow">Permanent Collection</p>
-        <h1 class="title">The Midnight Gallery</h1>
-        <p class="subtitle">Each work rests in darkness. Move your light across it to see.</p>
-        <p class="nav-hint">
-          Use your <span class="keys"><kbd>&#8592;</kbd><kbd>&#8593;</kbd><kbd>&#8595;</kbd><kbd>&#8594;</kbd></span>
-          arrow keys to wander the gallery in any direction.
-        </p>
+<!-- ===== ICON SPRITE ===== -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></symbol>
+  <symbol id="i-ticket" viewBox="0 0 24 24"><path d="M3 9V6a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v3a2.5 2.5 0 0 0 0 6v3a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-3a2.5 2.5 0 0 0 0-6Z"/><path d="M13 5v14" stroke-dasharray="2 2"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></symbol>
+  <symbol id="i-camera" viewBox="0 0 24 24"><path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h2L8 5h8l1.5 2h2A1.5 1.5 0 0 1 21 8.5v9A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5Z"/><circle cx="12" cy="13" r="3.5"/></symbol>
+  <symbol id="i-external" viewBox="0 0 24 24"><path d="M14 5h5v5"/><path d="M19 5l-8 8"/><path d="M18 14v4a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h4"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 19V5"/><path d="M6 11l6-6 6 6"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11l8-6.5 8 6.5"/><path d="M6 10v9h12v-9"/><path d="M10 19v-5h4v5"/></symbol>
+  <symbol id="i-car" viewBox="0 0 24 24"><path d="M4 16v-3.5L6 8h12l2 4.5V16"/><path d="M3 16h18"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/></symbol>
+  <symbol id="i-train" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="12" rx="3"/><path d="M5 11h14"/><path d="M8 20l2-3M16 20l-2-3"/><path d="M9.5 8h.01M14.5 8h.01"/></symbol>
+  <symbol id="i-plane" viewBox="0 0 24 24"><path d="M10.5 19.5 12 15l7.5-2.2a1.6 1.6 0 0 0 0-3.1L12 7.5 10.5 3l-1.8.6 1 4.4-5.2-1.5-1 1 4.6 3.2-4.6 3.2 1 1 5.2-1.5-1 4.4Z"/></symbol>
+  <symbol id="i-food" viewBox="0 0 24 24"><path d="M6 3v7a2.5 2.5 0 0 0 5 0V3"/><path d="M8.5 10v11"/><path d="M16.5 3c-1.5 1.5-1.5 4 0 5.5V21"/></symbol>
+  <symbol id="i-basket" viewBox="0 0 24 24"><path d="M4 8h16l-1.4 10a2 2 0 0 1-2 1.7H7.4a2 2 0 0 1-2-1.7Z"/><path d="M9 8 11 4M15 8 13 4"/></symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 4l9 16H3Z"/><path d="M12 10v4M12 17h.01"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c0-3 2.5-5 5.5-5s5.5 2 5.5 5"/><path d="M16 5.5a3.2 3.2 0 0 1 0 6.4M17 19c0-2-.7-3.6-1.8-4.6 2.8.2 5.3 2.2 5.3 4.6"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5Z"/><path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H13v16h5.5A1.5 1.5 0 0 0 20 18.5Z"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-map" viewBox="0 0 24 24"><path d="M9 4 3 6.5v13L9 17l6 2.5 6-2.5v-13L15 6.5Z"/><path d="M9 4v13M15 6.5v13"/></symbol>
+  <symbol id="i-print" viewBox="0 0 24 24"><path d="M7 9V4h10v5"/><rect x="4" y="9" width="16" height="7" rx="1.5"/><path d="M7 16h10v4H7Z"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+  <symbol id="i-walk" viewBox="0 0 24 24"><circle cx="13" cy="4.5" r="2"/><path d="M12 8.5 9.5 14l-2 6"/><path d="M12 8.5 15 11l1.5 4"/><path d="M11 13.5 14 21"/><path d="M12.5 9 8 11"/></symbol>
+  <symbol id="i-cake" viewBox="0 0 24 24"><path d="M4 20V14a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v6Z"/><path d="M3 20h18"/><path d="M12 12V8"/><path d="M12 5.5c0 .8-1 .8-1 0 0-.6 1-1.5 1-1.5s1 .9 1 1.5c0 .8-1 .8-1 0Z"/></symbol>
+</svg>
+
+<a class="skip-link" href="#day-1">Skip to the itinerary</a>
+
+<nav class="topbar" aria-label="Trip navigation">
+  <div class="brand">New England <span>2026</span></div>
+  <div class="days-nav" id="daysNav">
+    <a href="#logistics" title="Lodging, arrivals &amp; standing notes" aria-label="Logistics">i</a>
+    <a href="#tickets" title="Tickets &amp; reservations" aria-label="Tickets">$</a>
+    <a href="#day-1" title="Sat Oct 3 — Arrivals">1</a>
+    <a href="#day-2" title="Sun Oct 4 — Deerfield &amp; the Berkshires">2</a>
+    <a href="#day-3" title="Mon Oct 5 — Concord">3</a>
+    <a href="#day-4" title="Tue Oct 6 — Lexington, then Marshfield">4</a>
+    <a href="#day-5" title="Wed Oct 7 — Quincy &amp; the Adamses">5</a>
+    <a href="#day-6" title="Thu Oct 8 — Boston by train">6</a>
+    <a href="#day-7" title="Fri Oct 9 — Plymouth">7</a>
+    <a href="#day-8" title="Sat Oct 10 — Beach day &amp; first departures">8</a>
+    <a href="#day-9" title="Sun Oct 11 — Fly home">9</a>
+  </div>
+  <div class="nav-tools">
+    <button class="icon-btn" id="themeToggle" type="button" aria-pressed="false" title="Switch between light and dark" aria-label="Toggle dark mode">
+      <svg class="icon" aria-hidden="true"><use href="#i-moon"/></svg>
+    </button>
+    <button class="icon-btn" id="colorToggle" type="button" aria-pressed="false" title="Colour-vision-friendly palette" aria-label="Toggle colour-vision-friendly palette">
+      <svg class="icon" aria-hidden="true"><use href="#i-eye"/></svg>
+    </button>
+    <button class="icon-btn" id="printBtn" type="button" title="Print or save as PDF" aria-label="Print this itinerary">
+      <svg class="icon" aria-hidden="true"><use href="#i-print"/></svg>
+    </button>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="hero-content">
+    <p class="eyebrow">Family Trip</p>
+    <h1>New England 2026</h1>
+    <p class="subtitle">Colonial villages, Revolutionary ground, Concord&rsquo;s writers, the Adamses, Boston and Plymouth &mdash; plus a beach at the end of most days.</p>
+    <ul class="meta">
+      <li><svg class="icon" aria-hidden="true"><use href="#i-calendar"/></svg>Sat Oct 3 &ndash; Sun Oct 11, 2026</li>
+      <li><svg class="icon" aria-hidden="true"><use href="#i-home"/></svg>Wayland &amp; Marshfield, MA</li>
+      <li><svg class="icon" aria-hidden="true"><use href="#i-car"/></svg>Two rental cars</li>
+    </ul>
+    <p><span class="countdown" id="countdown" hidden></span></p>
+    <div class="hero-actions">
+      <a class="btn" href="https://photos.app.goo.gl/PPzan23vGfevypyn7" target="_blank" rel="noopener">
+        <svg class="icon" aria-hidden="true"><use href="#i-camera"/></svg>Google Photos album
+      </a>
+      <button class="btn btn-ghost" id="mapToggle" type="button" aria-expanded="false" aria-controls="mapSection">
+        <svg class="icon" aria-hidden="true"><use href="#i-map"/></svg><span id="mapToggleLabel">Show route map</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+<!-- ===== LOGISTICS ===== -->
+<section class="band" id="logistics" aria-labelledby="logistics-h">
+  <div class="container">
+    <h2 id="logistics-h">Logistics</h2>
+    <p class="band-sub">Where we sleep, who lands when, and the handful of things that have to happen every day.</p>
+    <div class="logistics-grid">
+
+      <div class="info-card">
+        <h3><svg class="icon" aria-hidden="true"><use href="#i-home"/></svg>Where we&rsquo;re staying</h3>
+        <dl>
+          <dt>Nights 1&ndash;3 &middot; Oct 3&ndash;6</dt>
+          <dd>
+            Airbnb, Wayland
+            <span class="addr">253 Main St, Wayland MA &middot;
+              <a href="https://www.google.com/maps/search/?api=1&amp;query=253+Main+St+Wayland+MA" target="_blank" rel="noopener">map</a>
+            </span>
+            <span class="addr">Check in after 4:00 PM Sat &middot; check out by 10:00 AM Tue</span>
+          </dd>
+          <dt>Nights 4&ndash;8 &middot; Oct 6&ndash;11</dt>
+          <dd>
+            Airbnb, Marshfield
+            <span class="addr">134 Central Ave, Marshfield MA &middot;
+              <a href="https://www.google.com/maps/search/?api=1&amp;query=134+Central+Ave+Marshfield+MA" target="_blank" rel="noopener">map</a>
+            </span>
+            <span class="addr">Check out by 11:00 AM Sun Oct 11 &middot; walkable-ish to the beach, near a commuter-rail line</span>
+          </dd>
+        </dl>
       </div>
-    </section>
-  </main>
 
-  <!-- Little position map, lower-right -->
-  <nav id="minimap" class="minimap" aria-label="Gallery map"></nav>
+      <div class="info-card">
+        <h3><svg class="icon" aria-hidden="true"><use href="#i-plane"/></svg>Arrivals &amp; departures</h3>
+        <dl>
+          <dt>Sat Oct 3 &mdash; into Logan</dt>
+          <dd>
+            Greg &amp; Eliz &mdash; 7:40 AM<span class="addr">First in; they pick up a rental car</span>
+            LB &amp; Dane &mdash; 3:53 PM<span class="addr">Kat &amp; Steven &mdash; 5:30 PM</span>
+          </dd>
+          <dt>Sat Oct 10</dt>
+          <dd>LB &amp; Dane head out to Logan<span class="addr">Everyone else has an open day</span></dd>
+          <dt>Sun Oct 11</dt>
+          <dd>
+            Greg &amp; Eliz &mdash; return one car 9:00 AM, wheels up 10:30 AM
+            <span class="addr">Steven &amp; Kat keep the second car; timing still to be decided</span>
+            <span class="addr">Other flight times work fine &mdash; the commuter rail runs to a Logan connection</span>
+          </dd>
+        </dl>
+      </div>
 
-  <script src="gallery.js"></script>
+      <div class="info-card">
+        <h3><svg class="icon" aria-hidden="true"><use href="#i-info"/></svg>Standing notes</h3>
+        <ul class="plain">
+          <li><svg class="icon" aria-hidden="true"><use href="#i-basket"/></svg><span><strong>Groceries:</strong> Walmart+ order on arrival day. <strong>LB is in charge of receipts.</strong></span></li>
+          <li><svg class="icon" aria-hidden="true"><use href="#i-food"/></svg><span><strong>Pack lunches</strong> the morning of Mon Oct 5, Tue Oct 6 and Wed Oct 7 &mdash; those are picnic days.</span></li>
+          <li><svg class="icon" aria-hidden="true"><use href="#i-users"/></svg><span>The group splits on some days. Where it does, it&rsquo;s noted on that day.</span></li>
+          <li><svg class="icon" aria-hidden="true"><use href="#i-car"/></svg><span>Two rental cars, so two itineraries are always possible.</span></li>
+          <li><svg class="icon" aria-hidden="true"><use href="#i-cake"/></svg><span>Joel&rsquo;s birthday dinner is Sun Oct 4 at the Wayland house.</span></li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+</section>
+<!-- ===== TICKETS ===== -->
+<section class="band" id="tickets" aria-labelledby="tickets-h">
+  <div class="container">
+    <h2 id="tickets-h">Tickets &amp; reservations</h2>
+    <p class="band-sub">Everything that costs money or needs booking, in one place. Prices are per adult unless noted.</p>
+    <div class="table-wrap">
+      <table class="tickets">
+        <caption>Booking links open the vendor&rsquo;s own site in a new tab.</caption>
+        <thead>
+          <tr>
+            <th scope="col">Site</th>
+            <th scope="col">When</th>
+            <th scope="col">Price</th>
+            <th scope="col">Notes</th>
+            <th scope="col">Book</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">Historic Deerfield</th>
+            <td>Sun Oct 4 <span class="when">Morning onward</span></td>
+            <td class="price">$20</td>
+            <td>One purchase &mdash; the ticket is good all day.</td>
+            <td><a class="book-link" href="https://3647a.blackbaudhosting.com/3647a/tickets?tab=3&amp;txobjid=1b87ef14-b89d-4a5c-803f-79124cc2bcd8" target="_blank" rel="noopener">Tickets<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a></td>
+          </tr>
+          <tr>
+            <th scope="row">Norman Rockwell Museum</th>
+            <td>Sun Oct 4 <span class="when">Afternoon &mdash; closes 5:00 PM</span></td>
+            <td class="price">$25<span class="when">$23 seniors &amp; retired military</span></td>
+            <td>Stockbridge, about an hour west of Deerfield.</td>
+            <td><a class="book-link" href="https://tickets.nrm.org/orders/538/calendar?eventId=6387e7568b22f34931d3e160" target="_blank" rel="noopener">Tickets<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a></td>
+          </tr>
+          <tr>
+            <th scope="row">The Old Manse</th>
+            <td>Mon Oct 5 <span class="when">11:00 AM tour</span></td>
+            <td class="price">Tour fee</td>
+            <td>Timed guided tour &mdash; be there a few minutes early.</td>
+            <td><a class="book-link" href="https://explore.thetrustees.org/" target="_blank" rel="noopener">Trustees<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a></td>
+          </tr>
+          <tr>
+            <th scope="row">Orchard House</th>
+            <td>Mon Oct 5 <span class="when">2:15 PM timed entry</span></td>
+            <td class="price">$15<span class="when">$12 seniors</span></td>
+            <td>Louisa May Alcott&rsquo;s house. Timed entry, so don&rsquo;t linger over the picnic.</td>
+            <td><a class="book-link" href="https://louisamayalcottsorchardhouse.ticketspice.com/orchard-house-timed-entry" target="_blank" rel="noopener">Tickets<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a></td>
+          </tr>
+          <tr>
+            <th scope="row">Concord Museum</th>
+            <td>Mon Oct 5 <span class="when">Optional</span></td>
+            <td class="price">At the door</td>
+            <td>Only if the day has room. Buy in person.</td>
+            <td><a class="book-link" href="https://concordmuseum.org/" target="_blank" rel="noopener">Info<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a></td>
+          </tr>
+          <tr>
+            <th scope="row">Adams National Historical Park</th>
+            <td>Wed Oct 7 <span class="when">From 9:00 AM</span></td>
+            <td class="price">$15</td>
+            <td><strong>House tours need a same-day reservation made in person at the visitor center desk.</strong> Buying the pass online does not reserve a tour.</td>
+            <td><a class="book-link" href="https://www.nps.gov/adam/planyourvisit/fees.htm" target="_blank" rel="noopener">Passes<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a></td>
+          </tr>
+          <tr>
+            <th scope="row">The Jenney walking tour</th>
+            <td>Fri Oct 9 <span class="when">11:15 AM &mdash; arrive by 11:00</span></td>
+            <td class="price">Per person</td>
+            <td>90 minutes, about 1.5 miles, guide in period dress. Non-refundable, and it needs a minimum group size &mdash; they confirm the day before.</td>
+            <td><a class="book-link" href="https://booking.attractionsuite.com/Attraction/ec/selectTourCountAndCategory.action?tourNo=VH101000&amp;sid=y_GW6TZiJBc" target="_blank" rel="noopener">Book<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a></td>
+          </tr>
+          <tr>
+            <th scope="row">Mayflower II &amp; Plimoth Patuxet</th>
+            <td>Fri Oct 9 <span class="when">Afternoon</span></td>
+            <td class="price">Museum admission</td>
+            <td>Tickets are good all day, so the morning tour first is fine.</td>
+            <td><a class="book-link" href="https://plimothpatuxet.centeredgeonline.com/retail/items/g/MuseumTickets" target="_blank" rel="noopener">Tickets<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a></td>
+          </tr>
+          <tr>
+            <th scope="row">Walden Pond</th>
+            <td>Mon Oct 5 <span class="when">If we picnic there</span></td>
+            <td class="price">Parking fee</td>
+            <td>State reservation &mdash; day-use parking fee, and the lot fills up.</td>
+            <td><a class="book-link" href="https://www.mass.gov/locations/walden-pond-state-reservation" target="_blank" rel="noopener">Info<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="notice">
+      <svg class="icon" aria-hidden="true"><use href="#i-alert"/></svg>
+      <span><strong>Check the date on the Jenney booking link.</strong> The link in the planning notes was pre-filled for <strong>Oct 8</strong>, but the Plymouth day is <strong>Friday Oct 9</strong>. Set the date to Oct 9 before paying &mdash; the tour is non-refundable.</span>
+    </p>
+  </div>
+</section>
+
+<!-- ===== ROUTE MAP ===== -->
+<section class="band map-overview" id="mapSection" aria-labelledby="map-h">
+  <div class="container">
+    <h2 id="map-h">Route map</h2>
+    <p class="band-sub">Each day is its own colour, in visiting order. Houses mark the two Airbnbs. Click a pin for the day and place.</p>
+    <div id="tripMap" role="application" aria-label="Map of trip locations by day"></div>
+    <div class="map-legend" id="mapLegend"></div>
+  </div>
+</section>
+<!-- ===== DAY 1 ===== -->
+<section class="day-section" id="day-1" style="--day-accent: var(--day-1)" aria-labelledby="day-1-h">
+  <div class="container">
+    <div class="day-header">
+      <p class="day-number">Day 1</p>
+      <h2 id="day-1-h">Arrivals &amp; settling in<span class="today-badge">Today</span></h2>
+      <p class="day-date">Saturday, October 3, 2026 &middot; Wayland</p>
+      <p class="day-summary">Three flights land across the day. Whoever gets there first grabs a car; the house opens at 4:00 PM. Tonight is groceries, a meal plan and an early night &mdash; tomorrow is the longest drive of the week.</p>
+      <ul class="day-flags">
+        <li><svg class="icon" aria-hidden="true"><use href="#i-home"/></svg>Check in after 4:00 PM</li>
+        <li><svg class="icon" aria-hidden="true"><use href="#i-basket"/></svg>Walmart+ order</li>
+      </ul>
+    </div>
+
+    <ol class="timeline">
+      <li><span class="t-time">7:40 AM</span><span class="t-body"><span class="t-what">Greg &amp; Eliz land</span><span class="t-detail">Pick up a rental car; a whole day free before check-in.</span></span></li>
+      <li><span class="t-time">3:53 PM</span><span class="t-body"><span class="t-what">LB &amp; Dane land</span></span></li>
+      <li><span class="t-time">4:00 PM</span><span class="t-body"><span class="t-what">Wayland house opens</span><span class="t-detail">253 Main St. Anyone already in the area can head over.</span></span></li>
+      <li><span class="t-time">5:30 PM</span><span class="t-body"><span class="t-what">Kat &amp; Steven land</span><span class="t-detail">Second rental car.</span></span></li>
+      <li><span class="t-time">Evening</span><span class="t-body"><span class="t-what">Groceries &amp; the week&rsquo;s meal plan</span><span class="t-detail">Walmart+ order. LB keeps the receipts.</span></span></li>
+    </ol>
+
+    <div class="events-grid">
+      <article class="event-card is-clickable" data-modal="boston-logan">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/Boston_Logan_International_Airport_on_Massachusetts_Bay_%28iss072e311839%29_%28cropped%29.jpg/960px-Boston_Logan_International_Airport_on_Massachusetts_Bay_%28iss072e311839%29_%28cropped%29.jpg" alt="Boston Logan International Airport seen from above, on Massachusetts Bay" loading="lazy" decoding="async" data-abbr="BOS">
+        </div>
+        <div class="card-body">
+          <h3>Boston Logan (BOS)</h3>
+          <p class="summary">Everybody funnels through here. Baggage claim, then the rental car center via the shuttle from any terminal&rsquo;s lower level.</p>
+          <ul class="tags">
+            <li class="tag"><svg class="icon" aria-hidden="true"><use href="#i-plane"/></svg>3 arrivals</li>
+            <li class="tag"><svg class="icon" aria-hidden="true"><use href="#i-car"/></svg>2 cars</li>
+          </ul>
+          <div class="card-links">
+            <button class="details-btn" type="button" data-modal="boston-logan">History &amp; sources</button>
+            <a href="https://www.massport.com/logan-airport" target="_blank" rel="noopener">Airport<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+          </div>
+        </div>
+      </article>
+
+      <article class="event-card">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/First_Parish_In_Wayland_MA.jpg/960px-First_Parish_In_Wayland_MA.jpg" alt="The white clapboard First Parish church in Wayland, Massachusetts" loading="lazy" decoding="async" data-abbr="WAY">
+          <span class="card-time"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>After 4:00 PM</span>
+        </div>
+        <div class="card-body">
+          <h3>The Wayland house</h3>
+          <p class="day-note">253 Main St, Wayland MA. Our base for the first three nights &mdash; about 25 minutes from Concord and 30 from Lexington, which is the whole reason it&rsquo;s here.</p>
+          <ul class="tags">
+            <li class="tag"><svg class="icon" aria-hidden="true"><use href="#i-home"/></svg>Nights 1&ndash;3</li>
+          </ul>
+          <div class="card-links">
+            <a href="https://www.google.com/maps/search/?api=1&amp;query=253+Main+St+Wayland+MA" target="_blank" rel="noopener">Directions<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+          </div>
+        </div>
+      </article>
+
+      <article class="event-card">
+        <div class="card-body">
+          <h3>Groceries &amp; the meal plan</h3>
+          <p class="day-note">Walmart+ order for the week. Most dinners are at the house, and three days need packed lunches &mdash; worth planning tonight rather than at 7:00 AM.</p>
+          <ul class="tags">
+            <li class="tag"><svg class="icon" aria-hidden="true"><use href="#i-basket"/></svg>LB has the receipts</li>
+            <li class="tag"><svg class="icon" aria-hidden="true"><use href="#i-food"/></svg>3 picnic days</li>
+          </ul>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ===== DAY 2 ===== -->
+<section class="day-section" id="day-2" style="--day-accent: var(--day-2)" aria-labelledby="day-2-h">
+  <div class="container">
+    <div class="day-header">
+      <p class="day-number">Day 2</p>
+      <h2 id="day-2-h">Deerfield &amp; the Berkshires<span class="today-badge">Today</span></h2>
+      <p class="day-date">Sunday, October 4, 2026 &middot; Deerfield &amp; Stockbridge</p>
+      <p class="day-summary">West across the state for a preserved colonial village, with an optional swing further west to the Norman Rockwell Museum. The group splits: Coggins and Kowalicks spend the whole day in Deerfield, parents and Caroline drive on to Stockbridge whenever they feel like it. Back at the house for Joel&rsquo;s birthday dinner.</p>
+      <ul class="day-flags">
+        <li><svg class="icon" aria-hidden="true"><use href="#i-users"/></svg>Group splits</li>
+        <li><svg class="icon" aria-hidden="true"><use href="#i-car"/></svg>Longest driving day</li>
+        <li><svg class="icon" aria-hidden="true"><use href="#i-cake"/></svg>Joel&rsquo;s birthday</li>
+      </ul>
+    </div>
+
+    <ol class="timeline">
+      <li><span class="t-time">Morning</span><span class="t-body"><span class="t-what">Drive to Historic Deerfield</span><span class="t-detail">About 1 hr 30 from Wayland. $20 a head, and the ticket is good all day.</span></span></li>
+      <li><span class="t-time">All day</span><span class="t-body"><span class="t-what">Coggins &amp; Kowalicks stay in Deerfield</span><span class="t-detail">Twelve museum houses along one street &mdash; there is easily a full day here.</span></span></li>
+      <li><span class="t-time">Afternoon</span><span class="t-body"><span class="t-what">Parents &amp; Caroline on to Stockbridge</span><span class="t-detail">Norman Rockwell Museum, about an hour south-west. <strong>Closes at 5:00 PM</strong>, so leave Deerfield by about 3:00.</span></span></li>
+      <li><span class="t-time">Evening</span><span class="t-body"><span class="t-what">Birthday dinner at the house</span><span class="t-detail">Cooking in. Happy birthday, Joel.</span></span></li>
+    </ol>
+
+    <div class="events-grid">
+      <article class="event-card is-clickable" data-modal="historic-deerfield">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/Dwight_House%2C_Historic_Deerfield.jpg/960px-Dwight_House%2C_Historic_Deerfield.jpg" alt="The Dwight House, a colonial clapboard house at Historic Deerfield" loading="lazy" decoding="async" data-abbr="HD">
+          <span class="card-time"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>Morning onward</span>
+        </div>
+        <div class="card-body">
+          <h3>Historic Deerfield</h3>
+          <p class="summary">A mile-long street of twelve preserved museum houses, 1720 to 1850, plus one of the best collections of early American furniture and silver anywhere.</p>
+          <ul class="tags">
+            <li class="tag"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>3&ndash;5 hrs</li>
+            <li class="tag admission"><svg class="icon" aria-hidden="true"><use href="#i-ticket"/></svg>$20 &middot; all day</li>
+          </ul>
+          <div class="card-links">
+            <button class="details-btn" type="button" data-modal="historic-deerfield">History &amp; sources</button>
+            <a href="https://3647a.blackbaudhosting.com/3647a/tickets?tab=3&amp;txobjid=1b87ef14-b89d-4a5c-803f-79124cc2bcd8" target="_blank" rel="noopener">Tickets<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+            <a href="https://www.google.com/maps/search/?api=1&amp;query=Historic+Deerfield+Deerfield+MA" target="_blank" rel="noopener">Map<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+          </div>
+        </div>
+      </article>
+
+      <article class="event-card is-clickable" data-modal="rockwell-museum">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/92/Rockwell_museum.jpg/960px-Rockwell_museum.jpg" alt="The Norman Rockwell Museum building in Stockbridge, Massachusetts" loading="lazy" decoding="async" data-abbr="NRM">
+          <span class="card-time"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>Closes 5:00 PM</span>
+        </div>
+        <div class="card-body">
+          <h3>Norman Rockwell Museum</h3>
+          <p class="summary">The largest collection of Rockwell&rsquo;s original art, in the Berkshires town he actually lived in &mdash; his studio was moved here and sits on the grounds.</p>
+          <ul class="tags">
+            <li class="tag"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>2&ndash;3 hrs</li>
+            <li class="tag admission"><svg class="icon" aria-hidden="true"><use href="#i-ticket"/></svg>$25 &middot; $23 senior</li>
+          </ul>
+          <div class="card-links">
+            <button class="details-btn" type="button" data-modal="rockwell-museum">History &amp; sources</button>
+            <a href="https://tickets.nrm.org/orders/538/calendar?eventId=6387e7568b22f34931d3e160" target="_blank" rel="noopener">Tickets<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+            <a href="https://www.google.com/maps/search/?api=1&amp;query=Norman+Rockwell+Museum+Stockbridge+MA" target="_blank" rel="noopener">Map<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+          </div>
+        </div>
+      </article>
+
+      <article class="event-card">
+        <div class="card-body">
+          <h3>Birthday dinner at the house</h3>
+          <p class="day-note">Cooking in at Wayland and celebrating Joel&rsquo;s birthday. Worth making sure the birthday supplies are on the Walmart+ order the night before.</p>
+          <ul class="tags">
+            <li class="tag"><svg class="icon" aria-hidden="true"><use href="#i-cake"/></svg>Joel&rsquo;s birthday</li>
+            <li class="tag free"><svg class="icon" aria-hidden="true"><use href="#i-home"/></svg>At the house</li>
+          </ul>
+        </div>
+      </article>
+    </div>
+
+    <p class="notice">
+      <svg class="icon" aria-hidden="true"><use href="#i-alert"/></svg>
+      <span><strong>This is a lot of driving.</strong> Wayland to Deerfield is about 1 hr 30, Deerfield to Stockbridge about another hour, and Stockbridge back to Wayland is roughly 2 hrs. Doing both museums in one day means about five hours in the car for whoever does the full loop &mdash; which is exactly why the group splits.</span>
+    </p>
+  </div>
+</section>
+
+<!-- ===== DAY 3 ===== -->
+<section class="day-section" id="day-3" style="--day-accent: var(--day-3)" aria-labelledby="day-3-h">
+  <div class="container">
+    <div class="day-header">
+      <p class="day-number">Day 3</p>
+      <h2 id="day-3-h">Concord &mdash; the writers&rsquo; town<span class="today-badge">Today</span></h2>
+      <p class="day-date">Monday, October 5, 2026 &middot; Concord</p>
+      <p class="day-summary">Two timed tours bracket the day, with a picnic in between. Emerson, Hawthorne, Alcott and Thoreau all lived within a couple of miles of each other here, and all four are buried on the same ridge.</p>
+      <ul class="day-flags">
+        <li><svg class="icon" aria-hidden="true"><use href="#i-food"/></svg>Pack lunches</li>
+        <li><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>Two timed tours</li>
+      </ul>
+    </div>
+
+    <ol class="timeline">
+      <li><span class="t-time">Morning</span><span class="t-body"><span class="t-what">Pack lunches, drive to Concord</span><span class="t-detail">About 25 minutes from Wayland.</span></span></li>
+      <li><span class="t-time">11:00 AM</span><span class="t-body"><span class="t-what">The Old Manse &mdash; guided tour</span><span class="t-detail">Booked. Arrive 10 minutes early; the tour runs 60&ndash;90 minutes.</span></span></li>
+      <li><span class="t-time">12:45 PM</span><span class="t-body"><span class="t-what">Picnic lunch</span><span class="t-detail">Walden Pond is the nice option &mdash; parking fee, and the lot fills. Otherwise eat in town or by the North Bridge.</span></span></li>
+      <li><span class="t-time">2:15 PM</span><span class="t-body"><span class="t-what">Orchard House &mdash; timed entry</span><span class="t-detail">Where <em>Little Women</em> was written. Timed, so leave the picnic in good time.</span></span></li>
+      <li><span class="t-time">4:00 PM</span><span class="t-body"><span class="t-what">Town square, then Sleepy Hollow</span><span class="t-detail">Authors Ridge is a short uphill walk inside the cemetery. The Concord Museum is here too if the day has room.</span></span></li>
+      <li><span class="t-time">Evening</span><span class="t-body"><span class="t-what">Dinner at the house</span></span></li>
+    </ol>
+
+    <div class="events-grid">
+      <article class="event-card is-clickable" data-modal="old-manse">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Old_Manse_from_afar.jpg/960px-Old_Manse_from_afar.jpg" alt="The Old Manse, a grey clapboard house behind a field in Concord" loading="lazy" decoding="async" data-abbr="OM">
+          <span class="card-time"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>11:00 AM tour</span>
+        </div>
+        <div class="card-body">
+          <h3>The Old Manse</h3>
+          <p class="summary">Emerson&rsquo;s grandfather built it, and the family watched the fight at the North Bridge from its windows. Hawthorne rented it as a newlywed and named it.</p>
+          <ul class="tags">
+            <li class="tag"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>60&ndash;90 min</li>
+            <li class="tag booked"><svg class="icon" aria-hidden="true"><use href="#i-ticket"/></svg>Tour booked</li>
+          </ul>
+          <div class="card-links">
+            <button class="details-btn" type="button" data-modal="old-manse">History &amp; sources</button>
+            <a href="https://thetrustees.org/place/the-old-manse/" target="_blank" rel="noopener">Site<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+            <a href="https://www.google.com/maps/search/?api=1&amp;query=Old+Manse+Concord+MA" target="_blank" rel="noopener">Map<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+          </div>
+        </div>
+      </article>
+
+      <article class="event-card is-clickable" data-modal="walden-pond">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Walden_Pond_outlook.jpg/960px-Walden_Pond_outlook.jpg" alt="Walden Pond seen through trees from the shore path" loading="lazy" decoding="async" data-abbr="WP">
+          <span class="card-time"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>Picnic, ~12:45</span>
+        </div>
+        <div class="card-body">
+          <h3>Walden Pond &mdash; picnic lunch</h3>
+          <p class="summary">Thoreau&rsquo;s two-year experiment happened on this shore, and there&rsquo;s a replica of the cabin near the parking lot. A 1.7-mile path rings the water.</p>
+          <ul class="tags">
+            <li class="tag"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>1&ndash;1.5 hrs</li>
+            <li class="tag admission"><svg class="icon" aria-hidden="true"><use href="#i-car"/></svg>Parking fee</li>
+          </ul>
+          <div class="card-links">
+            <button class="details-btn" type="button" data-modal="walden-pond">History &amp; sources</button>
+            <a href="https://www.mass.gov/locations/walden-pond-state-reservation" target="_blank" rel="noopener">Info<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+            <a href="https://www.google.com/maps/search/?api=1&amp;query=Walden+Pond+Concord+MA" target="_blank" rel="noopener">Map<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+          </div>
+        </div>
+      </article>
+
+      <article class="event-card is-clickable" data-modal="orchard-house">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/Orchard_House_from_Little_Women.jpeg/960px-Orchard_House_from_Little_Women.jpeg" alt="Orchard House, the brown clapboard Alcott family home in Concord" loading="lazy" decoding="async" data-abbr="OH">
+          <span class="card-time"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>2:15 PM entry</span>
+        </div>
+        <div class="card-body">
+          <h3>Orchard House</h3>
+          <p class="summary">Louisa May Alcott wrote <em>Little Women</em> at a half-moon desk her father built into her bedroom wall. Roughly 80% of the furnishings are the family&rsquo;s own.</p>
+          <ul class="tags">
+            <li class="tag"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>60&ndash;90 min</li>
+            <li class="tag admission"><svg class="icon" aria-hidden="true"><use href="#i-ticket"/></svg>$15 &middot; $12 senior</li>
+          </ul>
+          <div class="card-links">
+            <button class="details-btn" type="button" data-modal="orchard-house">History &amp; sources</button>
+            <a href="https://louisamayalcottsorchardhouse.ticketspice.com/orchard-house-timed-entry" target="_blank" rel="noopener">Tickets<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+            <a href="https://www.google.com/maps/search/?api=1&amp;query=Orchard+House+Concord+MA" target="_blank" rel="noopener">Map<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+          </div>
+        </div>
+      </article>
+
+      <article class="event-card is-clickable" data-modal="sleepy-hollow">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/Thoreau-gravesite.jpg/960px-Thoreau-gravesite.jpg" alt="Henry David Thoreau's small gravestone on Authors Ridge" loading="lazy" decoding="async" data-abbr="SH">
+        </div>
+        <div class="card-body">
+          <h3>Sleepy Hollow &amp; Authors Ridge</h3>
+          <p class="summary">Emerson, Thoreau, Hawthorne and the Alcotts are buried within a few steps of each other on a wooded ridge. Thoreau&rsquo;s stone just says &ldquo;Henry.&rdquo;</p>
+          <ul class="tags">
+            <li class="tag"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>45&ndash;60 min</li>
+            <li class="tag free"><svg class="icon" aria-hidden="true"><use href="#i-walk"/></svg>Free &middot; uphill walk</li>
+          </ul>
+          <div class="card-links">
+            <button class="details-btn" type="button" data-modal="sleepy-hollow">History &amp; sources</button>
+            <a href="https://www.google.com/maps/search/?api=1&amp;query=Sleepy+Hollow+Cemetery+Concord+MA" target="_blank" rel="noopener">Map<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+          </div>
+        </div>
+      </article>
+
+      <article class="event-card is-clickable" data-modal="concord-town">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/Wright_Tavern_in_Concord%2C_Mass_2012-0078.jpg/960px-Wright_Tavern_in_Concord%2C_Mass_2012-0078.jpg" alt="Wright Tavern, a yellow colonial building on Concord's town square" loading="lazy" decoding="async" data-abbr="CT">
+        </div>
+        <div class="card-body">
+          <h3>Concord town square</h3>
+          <p class="summary">Wright Tavern was the British officers&rsquo; headquarters on the morning of April 19, 1775. The square around it is still the middle of town, with bookshops and coffee.</p>
+          <ul class="tags">
+            <li class="tag"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>Flexible</li>
+            <li class="tag free"><svg class="icon" aria-hidden="true"><use href="#i-walk"/></svg>Free</li>
+          </ul>
+          <div class="card-links">
+            <button class="details-btn" type="button" data-modal="concord-town">History &amp; sources</button>
+            <a href="https://www.google.com/maps/search/?api=1&amp;query=Monument+Square+Concord+MA" target="_blank" rel="noopener">Map<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+          </div>
+        </div>
+      </article>
+
+      <article class="event-card">
+        <div class="card-body">
+          <h3>Concord Museum <span class="tag">optional</span></h3>
+          <p class="day-note">Holds one of the two lanterns from the Old North Church signal and Thoreau&rsquo;s actual desk. Only if the day has room &mdash; buy tickets at the door.</p>
+          <ul class="tags">
+            <li class="tag"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>1&ndash;1.5 hrs</li>
+            <li class="tag admission"><svg class="icon" aria-hidden="true"><use href="#i-ticket"/></svg>Pay at door</li>
+          </ul>
+          <div class="card-links">
+            <a href="https://concordmuseum.org/" target="_blank" rel="noopener">Site<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+            <a href="https://www.google.com/maps/search/?api=1&amp;query=Concord+Museum+Concord+MA" target="_blank" rel="noopener">Map<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+          </div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+<!-- ===== DAY 4 ===== -->
+<section class="day-section" id="day-4" style="--day-accent: var(--day-4)" aria-labelledby="day-4-h">
+  <div class="container">
+    <div class="day-header">
+      <p class="day-number">Day 4</p>
+      <h2 id="day-4-h">Lexington, Battle Road &amp; the move south<span class="today-badge">Today</span></h2>
+      <p class="day-date">Tuesday, October 6, 2026 &middot; Lexington &rarr; Marshfield</p>
+      <p class="day-summary">Pack the cars in the morning, spend the day where the Revolution started, then drive to the coast. The Battle Road walk is the centrepiece &mdash; the actual road the British retreated along, with stone walls the militia fired from still standing.</p>
+      <ul class="day-flags">
+        <li><svg class="icon" aria-hidden="true"><use href="#i-home"/></svg>Check out by 10:00 AM</li>
+        <li><svg class="icon" aria-hidden="true"><use href="#i-food"/></svg>Pack lunches</li>
+        <li><svg class="icon" aria-hidden="true"><use href="#i-car"/></svg>Moving house tonight</li>
+      </ul>
+    </div>
+
+    <ol class="timeline">
+      <li><span class="t-time">By 10:00</span><span class="t-body"><span class="t-what">Check out of the Wayland house</span><span class="t-detail">Everything into the cars &mdash; we don&rsquo;t come back here.</span></span></li>
+      <li><span class="t-time">10:30 AM</span><span class="t-body"><span class="t-what">Start on Lexington Green</span><span class="t-detail">Stand where Captain Parker&rsquo;s seventy-odd men lined up. 30&ndash;45 minutes.</span></span></li>
+      <li><span class="t-time">11:30 AM</span><span class="t-body"><span class="t-what">Drive to the visitor center</span><span class="t-detail">Orientation, a diorama of the battle, and restrooms before the walk.</span></span></li>
+      <li><span class="t-time">12:30 PM</span><span class="t-body"><span class="t-what">Lunch</span><span class="t-detail">Packed lunches &mdash; picnic tables at Minute Man park, or eat in Lexington centre.</span></span></li>
+      <li><span class="t-time">1:30 PM</span><span class="t-body"><span class="t-what">Walk the Battle Road Trail</span><span class="t-detail">Five miles end to end, but it&rsquo;s a trail of segments &mdash; the Hartwell Tavern stretch is the best hour of it.</span></span></li>
+      <li><span class="t-time">5:30 PM</span><span class="t-body"><span class="t-what">Italian dinner back in Lexington</span><span class="t-detail">Then the drive south.</span></span></li>
+      <li><span class="t-time">Evening</span><span class="t-body"><span class="t-what">Drive to the Marshfield house</span><span class="t-detail">134 Central Ave. Roughly an hour from Lexington without traffic &mdash; longer through the Boston ring, so consider leaving before or after rush hour.</span></span></li>
+    </ol>
+
+    <div class="events-grid">
+      <article class="event-card is-clickable" data-modal="lexington-green">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Lexington_Battle_Green%2C_Lexington_MA.jpg/960px-Lexington_Battle_Green%2C_Lexington_MA.jpg" alt="Lexington Battle Green with the Minuteman statue" loading="lazy" decoding="async" data-abbr="LG">
+          <span class="card-time"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>Start here</span>
+        </div>
+        <div class="card-body">
+          <h3>Lexington Green</h3>
+          <p class="summary">April 19, 1775: about 77 militiamen against roughly 700 British regulars. Eight colonists were killed in a few minutes and the war had started.</p>
+          <ul class="tags">
+            <li class="tag"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>30&ndash;45 min</li>
+            <li class="tag free"><svg class="icon" aria-hidden="true"><use href="#i-walk"/></svg>Free</li>
+          </ul>
+          <div class="card-links">
+            <button class="details-btn" type="button" data-modal="lexington-green">History &amp; sources</button>
+            <a href="https://www.lexingtonhistory.org" target="_blank" rel="noopener">Site<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+            <a href="https://www.google.com/maps/search/?api=1&amp;query=Lexington+Battle+Green+Lexington+MA" target="_blank" rel="noopener">Map<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+          </div>
+        </div>
+      </article>
+
+      <article class="event-card is-clickable" data-modal="lexington-visitor">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/76/Lexington_Visitor_Center%2C_MA.jpg/960px-Lexington_Visitor_Center%2C_MA.jpg" alt="The Lexington Visitor Center building" loading="lazy" decoding="async" data-abbr="VC">
+        </div>
+        <div class="card-body">
+          <h3>Visitor center</h3>
+          <p class="summary">A short drive from the Green. Good orientation before walking anything, and the place to ask what&rsquo;s actually open that day.</p>
+          <ul class="tags">
+            <li class="tag"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>30 min</li>
+            <li class="tag free">Free</li>
+          </ul>
+          <div class="card-links">
+            <button class="details-btn" type="button" data-modal="lexington-visitor">History &amp; sources</button>
+            <a href="https://www.nps.gov/mima/planyourvisit/hours.htm" target="_blank" rel="noopener">Hours<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+            <a href="https://www.google.com/maps/search/?api=1&amp;query=Minute+Man+Visitor+Center+Lexington+MA" target="_blank" rel="noopener">Map<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+          </div>
+        </div>
+      </article>
+
+      <article class="event-card is-clickable" data-modal="battle-road">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Battle_Road_Trail_boardwalk%2C_Lincoln_MA.jpg/960px-Battle_Road_Trail_boardwalk%2C_Lincoln_MA.jpg" alt="Boardwalk section of the Battle Road Trail through wetland in Lincoln" loading="lazy" decoding="async" data-abbr="BR">
+          <span class="card-time"><svg class="icon" aria-hidden="true"><use href="#i-walk"/></svg>The main event</span>
+        </div>
+        <div class="card-body">
+          <h3>Battle Road Trail</h3>
+          <p class="summary">The five-mile route of the British retreat, preserved as trail and 18th-century landscape. Boardwalks over the wet parts; interpretive markers where the worst of the fighting happened.</p>
+          <ul class="tags">
+            <li class="tag"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>2&ndash;3 hrs</li>
+            <li class="tag free"><svg class="icon" aria-hidden="true"><use href="#i-walk"/></svg>Free</li>
+          </ul>
+          <div class="card-links">
+            <button class="details-btn" type="button" data-modal="battle-road">History &amp; sources</button>
+            <a href="https://www.nps.gov/mima/planyourvisit/the-battle-road-trail.htm" target="_blank" rel="noopener">Trail guide<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+            <a href="https://www.google.com/maps/search/?api=1&amp;query=Battle+Road+Trail+Minute+Man+NHP+MA" target="_blank" rel="noopener">Map<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+          </div>
+        </div>
+      </article>
+
+      <article class="event-card is-clickable" data-modal="hartwell-tavern">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/25/Hartwell_Tavern_2.jpeg/960px-Hartwell_Tavern_2.jpeg" alt="Hartwell Tavern, a restored 18th-century tavern in Lincoln, Massachusetts" loading="lazy" decoding="async" data-abbr="HT">
+        </div>
+        <div class="card-body">
+          <h3>Hartwell Tavern</h3>
+          <p class="summary">Sits right on the trail, restored to 1775. Rangers in period clothing do musket-firing demonstrations in season &mdash; worth timing the walk around.</p>
+          <ul class="tags">
+            <li class="tag"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>30&ndash;45 min</li>
+            <li class="tag free">Free</li>
+          </ul>
+          <div class="card-links">
+            <button class="details-btn" type="button" data-modal="hartwell-tavern">History &amp; sources</button>
+            <a href="https://www.nps.gov/mima/hartwell-tavern.htm" target="_blank" rel="noopener">Site<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+            <a href="https://www.google.com/maps/search/?api=1&amp;query=Hartwell+Tavern+Lincoln+MA" target="_blank" rel="noopener">Map<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+          </div>
+        </div>
+      </article>
+
+      <article class="event-card is-clickable" data-modal="buckman-tavern">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/78/Buckman_Tavern_1.jpg/960px-Buckman_Tavern_1.jpg" alt="Buckman Tavern on Lexington Green" loading="lazy" decoding="async" data-abbr="BT">
+        </div>
+        <div class="card-body">
+          <h3>Buckman Tavern <span class="tag">if open</span></h3>
+          <p class="summary">Right on the Green &mdash; the militia waited out the small hours in here before forming up outside. Admission and tour hours vary in October, so check before counting on it.</p>
+          <ul class="tags">
+            <li class="tag"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>45&ndash;60 min</li>
+            <li class="tag admission"><svg class="icon" aria-hidden="true"><use href="#i-ticket"/></svg>Admission</li>
+          </ul>
+          <div class="card-links">
+            <button class="details-btn" type="button" data-modal="buckman-tavern">History &amp; sources</button>
+            <a href="https://www.lexingtonhistory.org" target="_blank" rel="noopener">Hours<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+            <a href="https://www.google.com/maps/search/?api=1&amp;query=Buckman+Tavern+Lexington+MA" target="_blank" rel="noopener">Map<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+          </div>
+        </div>
+      </article>
+
+      <article class="event-card">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/Winslow_Homer_-_On_the_Beach_at_Marshfield_%28c._1872%29.jpg/960px-Winslow_Homer_-_On_the_Beach_at_Marshfield_%28c._1872%29.jpg" alt="Winslow Homer's painting On the Beach at Marshfield, about 1872" loading="lazy" decoding="async" data-abbr="MAR">
+          <span class="card-time"><svg class="icon" aria-hidden="true"><use href="#i-home"/></svg>Nights 4&ndash;8</span>
+        </div>
+        <div class="card-body">
+          <h3>The Marshfield house</h3>
+          <p class="day-note">134 Central Ave, Marshfield MA &mdash; on the South Shore, near the beach and within reach of a commuter-rail station. Home for the rest of the trip. Winslow Homer painted this same stretch of sand in about 1872.</p>
+          <ul class="tags">
+            <li class="tag"><svg class="icon" aria-hidden="true"><use href="#i-home"/></svg>5 nights</li>
+            <li class="tag"><svg class="icon" aria-hidden="true"><use href="#i-train"/></svg>Near the rail line</li>
+          </ul>
+          <div class="card-links">
+            <a href="https://www.google.com/maps/search/?api=1&amp;query=134+Central+Ave+Marshfield+MA" target="_blank" rel="noopener">Directions<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+          </div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ===== DAY 5 ===== -->
+<section class="day-section" id="day-5" style="--day-accent: var(--day-5)" aria-labelledby="day-5-h">
+  <div class="container">
+    <div class="day-header">
+      <p class="day-number">Day 5</p>
+      <h2 id="day-5-h">The Adamses in Quincy<span class="today-badge">Today</span></h2>
+      <p class="day-date">Wednesday, October 7, 2026 &middot; Quincy</p>
+      <p class="day-summary">The tightest-scheduled day of the trip, and the best value: two presidents&rsquo; birthplaces, the house four generations of the family lived in, and the crypt where John and Abigail are buried &mdash; all within a couple of miles. Beach and dinner at the house afterwards.</p>
+      <ul class="day-flags">
+        <li><svg class="icon" aria-hidden="true"><use href="#i-food"/></svg>Pack lunches</li>
+        <li><svg class="icon" aria-hidden="true"><use href="#i-ticket"/></svg>$15 per adult</li>
+        <li><svg class="icon" aria-hidden="true"><use href="#i-alert"/></svg>Tours booked in person, same day</li>
+      </ul>
+    </div>
+
+    <ol class="timeline">
+      <li><span class="t-time">9:00 AM</span><span class="t-body"><span class="t-what">Start at the visitor center</span><span class="t-detail">1250 Hancock St, downtown Quincy. Watch the 26-minute film, and <strong>book the house tours at the desk now</strong>. Park in the Presidents Place garage &mdash; the park validates.</span></span></li>
+      <li><span class="t-time">10:00 AM</span><span class="t-body"><span class="t-what">The Old House at Peace field</span><span class="t-detail">Guided tour, 60&ndash;90 minutes. The Stone Library is on the same grounds &mdash; 14,000 books, and it&rsquo;s included.</span></span></li>
+      <li><span class="t-time">11:45 AM</span><span class="t-body"><span class="t-what">The two birthplaces at Penn&rsquo;s Hill</span><span class="t-detail">John Adams and John Quincy Adams were born in saltbox houses standing 75 feet apart.</span></span></li>
+      <li><span class="t-time">1:00 PM</span><span class="t-body"><span class="t-what">Packed lunch in Quincy Center</span><span class="t-detail">Benches and cafés within walking distance of the visitor center.</span></span></li>
+      <li><span class="t-time">2:30 PM</span><span class="t-body"><span class="t-what">United First Parish Church</span><span class="t-detail">John and Abigail Adams and John Quincy and Louisa Catherine Adams are all in the crypt downstairs. 30&ndash;45 minutes.</span></span></li>
+      <li><span class="t-time">3:30 PM</span><span class="t-body"><span class="t-what">Stroll Quincy Center</span><span class="t-detail">Shops, coffee, and a sit-down before the drive back.</span></span></li>
+      <li><span class="t-time">5:00 PM</span><span class="t-body"><span class="t-what">Depart for Marshfield</span><span class="t-detail">About 35 minutes. Dinner at the house and the beach &mdash; or find that Irish pub.</span></span></li>
+    </ol>
+
+    <div class="events-grid">
+      <article class="event-card is-clickable" data-modal="adams-visitor">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/62/Quincy%2C_Massachusetts.jpg/960px-Quincy%2C_Massachusetts.jpg" alt="Downtown Quincy, Massachusetts" loading="lazy" decoding="async" data-abbr="QV">
+          <span class="card-time"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>9:00 AM</span>
+        </div>
+        <div class="card-body">
+          <h3>Adams NHP visitor center</h3>
+          <p class="summary">Everything starts here: the film, the tickets, the trolley to the houses, and validated parking in the garage next door.</p>
+          <ul class="tags">
+            <li class="tag"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>1 hr</li>
+            <li class="tag admission"><svg class="icon" aria-hidden="true"><use href="#i-ticket"/></svg>$15 adult</li>
+          </ul>
+          <div class="card-links">
+            <button class="details-btn" type="button" data-modal="adams-visitor">History &amp; sources</button>
+            <a href="https://www.nps.gov/adam/planyourvisit/fees.htm" target="_blank" rel="noopener">Fees &amp; hours<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+            <a href="https://www.google.com/maps/search/?api=1&amp;query=Adams+National+Historical+Park+Visitor+Center+Quincy+MA" target="_blank" rel="noopener">Map<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+          </div>
+        </div>
+      </article>
+
+      <article class="event-card is-clickable" data-modal="peacefield">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/Adams_National_Historical_Park_ADAM4833.jpg/960px-Adams_National_Historical_Park_ADAM4833.jpg" alt="The Old House at Peace field, the Adams family home in Quincy" loading="lazy" decoding="async" data-abbr="PF">
+          <span class="card-time"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>10:00 AM tour</span>
+        </div>
+        <div class="card-body">
+          <h3>The Old House at Peace field</h3>
+          <p class="summary">Four generations of Adamses lived here across 140 years, and almost everything in it is theirs. John Adams died in the upstairs study on July 4, 1826.</p>
+          <ul class="tags">
+            <li class="tag"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>60&ndash;90 min</li>
+            <li class="tag booked"><svg class="icon" aria-hidden="true"><use href="#i-users"/></svg>Guided only</li>
+          </ul>
+          <div class="card-links">
+            <button class="details-btn" type="button" data-modal="peacefield">History &amp; sources</button>
+            <a href="https://www.nps.gov/adam" target="_blank" rel="noopener">Site<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+            <a href="https://www.google.com/maps/search/?api=1&amp;query=Peace+field+Old+House+Adams+NHP+Quincy+MA" target="_blank" rel="noopener">Map<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+          </div>
+        </div>
+      </article>
+
+      <article class="event-card is-clickable" data-modal="adams-birthplaces">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e9/John_Adams_birthplace%2C_Quincy%2C_Massachusetts.JPG/960px-John_Adams_birthplace%2C_Quincy%2C_Massachusetts.JPG" alt="The saltbox house where John Adams was born, Quincy, Massachusetts" loading="lazy" decoding="async" data-abbr="BP">
+          <span class="card-time"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>11:45 AM</span>
+        </div>
+        <div class="card-body">
+          <h3>The Adams birthplaces</h3>
+          <p class="summary">Two 17th-century saltboxes on Franklin Street: John Adams born in one in 1735, John Quincy in the other in 1767. Abigail wrote her letters to the Continental Congress from the second.</p>
+          <ul class="tags">
+            <li class="tag"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>60&ndash;75 min</li>
+            <li class="tag booked"><svg class="icon" aria-hidden="true"><use href="#i-users"/></svg>Guided only</li>
+          </ul>
+          <div class="card-links">
+            <button class="details-btn" type="button" data-modal="adams-birthplaces">History &amp; sources</button>
+            <a href="https://www.nps.gov/adam/learn/historyculture/john-adams-birthplace.htm" target="_blank" rel="noopener">Site<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+            <a href="https://www.google.com/maps/search/?api=1&amp;query=John+Adams+Birthplace+Franklin+St+Quincy+MA" target="_blank" rel="noopener">Map<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+          </div>
+        </div>
+      </article>
+
+      <article class="event-card is-clickable" data-modal="united-first-parish">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f5/United_First_Parish_Church%2C_Quincy%2C_MA_enhanced_with_dramatic_sky.jpg/960px-United_First_Parish_Church%2C_Quincy%2C_MA_enhanced_with_dramatic_sky.jpg" alt="United First Parish Church in Quincy, a granite church with a columned portico" loading="lazy" decoding="async" data-abbr="UF">
+          <span class="card-time"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>2:30 PM</span>
+        </div>
+        <div class="card-body">
+          <h3>United First Parish Church</h3>
+          <p class="summary">Built of Quincy granite the family donated the land for. Two presidents and two first ladies are in the crypt &mdash; the only church in America that can say that.</p>
+          <ul class="tags">
+            <li class="tag"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>30&ndash;45 min</li>
+            <li class="tag admission"><svg class="icon" aria-hidden="true"><use href="#i-ticket"/></svg>Donation</li>
+          </ul>
+          <div class="card-links">
+            <button class="details-btn" type="button" data-modal="united-first-parish">History &amp; sources</button>
+            <a href="https://ufpc.org/" target="_blank" rel="noopener">Site<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+            <a href="https://www.google.com/maps/search/?api=1&amp;query=United+First+Parish+Church+Quincy+MA" target="_blank" rel="noopener">Map<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+          </div>
+        </div>
+      </article>
+
+      <article class="event-card is-clickable" data-modal="stone-library">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/Adams_National_Park_Stone_Library.jpg/960px-Adams_National_Park_Stone_Library.jpg" alt="The Stone Library at Peace field, lined floor to ceiling with books" loading="lazy" decoding="async" data-abbr="SL">
+        </div>
+        <div class="card-body">
+          <h3>Stone Library</h3>
+          <p class="summary">Built fireproof in 1870 to hold the family&rsquo;s books, exactly as John Quincy Adams asked in his will. Over 14,000 volumes in 14 languages, still on their original shelves. Part of the Peace field tour.</p>
+          <ul class="tags">
+            <li class="tag"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>20&ndash;30 min</li>
+            <li class="tag free"><svg class="icon" aria-hidden="true"><use href="#i-book"/></svg>Included</li>
+          </ul>
+          <div class="card-links">
+            <button class="details-btn" type="button" data-modal="stone-library">History &amp; sources</button>
+            <a href="https://www.nps.gov/places/stone-library.htm" target="_blank" rel="noopener">Site<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+          </div>
+        </div>
+      </article>
+
+      <article class="event-card">
+        <div class="card-body">
+          <h3>Dinner &amp; the beach</h3>
+          <p class="day-note">Back to Marshfield around 6:00 PM. Dinner at the house and down to the water &mdash; or the Irish pub, if the day hasn&rsquo;t worn everyone out.</p>
+          <ul class="tags">
+            <li class="tag"><svg class="icon" aria-hidden="true"><use href="#i-sun"/></svg>Beach evening</li>
+            <li class="tag"><svg class="icon" aria-hidden="true"><use href="#i-food"/></svg>Pub option</li>
+          </ul>
+        </div>
+      </article>
+    </div>
+
+    <p class="notice">
+      <svg class="icon" aria-hidden="true"><use href="#i-alert"/></svg>
+      <span><strong>Two things to get right on this day.</strong> First, going inside any of the historic houses requires a guided tour, and those are reserved <em>in person, same day, at the visitor center desk</em> &mdash; which is why the 9:00 AM start matters. Second, the planning notes call this a Braintree day: the birthplaces did stand in Braintree, but its North Precinct became the town of Quincy in 1792, so everything is signposted as Quincy today. Visitor center and house tours generally run Wednesday to Sunday, 9:00&ndash;5:00, through the October season &mdash; Wednesday works, but it&rsquo;s worth a call to confirm the week of.</span>
+    </p>
+  </div>
+</section>
+<!-- ===== DAY 6 ===== -->
+<section class="day-section" id="day-6" style="--day-accent: var(--day-6)" aria-labelledby="day-6-h">
+  <div class="container">
+    <div class="day-header">
+      <p class="day-number">Day 6</p>
+      <h2 id="day-6-h">Boston by train<span class="today-badge">Today</span></h2>
+      <p class="day-date">Thursday, October 8, 2026 &middot; Boston</p>
+      <p class="day-summary">Leave the cars at the house. Take the 9:00 train in, start in the North End and work downhill and west &mdash; Old North Church, Paul Revere&rsquo;s house, lunch on the Common, then Beacon Hill&rsquo;s gas lamps and cobblestones. Train home when everyone&rsquo;s done.</p>
+      <ul class="day-flags">
+        <li><svg class="icon" aria-hidden="true"><use href="#i-train"/></svg>9:00 AM train</li>
+        <li><svg class="icon" aria-hidden="true"><use href="#i-walk"/></svg>A walking day</li>
+        <li><svg class="icon" aria-hidden="true"><use href="#i-car"/></svg>No parking to worry about</li>
+      </ul>
+    </div>
+
+    <ol class="timeline">
+      <li><span class="t-time">9:00 AM</span><span class="t-body"><span class="t-what">Train into Boston</span><span class="t-detail">Commuter rail to South Station. Check the timetable the night before &mdash; weekday service is frequent in the morning but thins out midday.</span></span></li>
+      <li><span class="t-time">10:15 AM</span><span class="t-body"><span class="t-what">North End</span><span class="t-detail">Old North Church and the Paul Revere House are five minutes apart. Narrow streets, Italian bakeries, oldest neighbourhood in the city.</span></span></li>
+      <li><span class="t-time">12:30 PM</span><span class="t-body"><span class="t-what">Lunch on Boston Common</span><span class="t-detail">Roughly a 20-minute walk down through the financial district, or one stop on the T.</span></span></li>
+      <li><span class="t-time">2:00 PM</span><span class="t-body"><span class="t-what">Beacon Hill</span><span class="t-detail">Straight up from the Common past the State House. Acorn Street is the famous one. Time for the bookshop.</span></span></li>
+      <li><span class="t-time">Late afternoon</span><span class="t-body"><span class="t-what">Train home</span><span class="t-detail">Back to South Station and out. Dinner at the house.</span></span></li>
+    </ol>
+
+    <div class="events-grid">
+      <article class="event-card is-clickable" data-modal="commuter-rail">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Inbound_train_from_Greenbush_at_JFK-UMass_July_2021.jpg/960px-Inbound_train_from_Greenbush_at_JFK-UMass_July_2021.jpg" alt="An inbound MBTA commuter rail train on the Greenbush line" loading="lazy" decoding="async" data-abbr="MBTA">
+          <span class="card-time"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>9:00 AM</span>
+        </div>
+        <div class="card-body">
+          <h3>Commuter rail to Boston</h3>
+          <p class="summary">The Greenbush line runs the South Shore into South Station. Buy tickets in the mTicket app before boarding &mdash; it&rsquo;s cheaper than onboard, and zone fares add up for a group.</p>
+          <ul class="tags">
+            <li class="tag"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>~50 min each way</li>
+            <li class="tag admission"><svg class="icon" aria-hidden="true"><use href="#i-ticket"/></svg>Zone fare</li>
+          </ul>
+          <div class="card-links">
+            <button class="details-btn" type="button" data-modal="commuter-rail">How it works</button>
+            <a href="https://www.mbta.com/schedules/CR-Greenbush/timetable" target="_blank" rel="noopener">Timetable<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+          </div>
+        </div>
+      </article>
+
+      <article class="event-card is-clickable" data-modal="north-end">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Boston_-_North_End_%2848718567143%29.jpg/960px-Boston_-_North_End_%2848718567143%29.jpg" alt="A narrow street in Boston's North End" loading="lazy" decoding="async" data-abbr="NE">
+          <span class="card-time"><svg class="icon" aria-hidden="true"><use href="#i-walk"/></svg>Start here</span>
+        </div>
+        <div class="card-body">
+          <h3>The North End</h3>
+          <p class="summary">Boston&rsquo;s oldest residential neighbourhood, continuously lived in since the 1630s. Colonial history and cannoli on the same block.</p>
+          <ul class="tags">
+            <li class="tag"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>2&ndash;3 hrs</li>
+            <li class="tag free"><svg class="icon" aria-hidden="true"><use href="#i-walk"/></svg>Free to wander</li>
+          </ul>
+          <div class="card-links">
+            <button class="details-btn" type="button" data-modal="north-end">History &amp; sources</button>
+            <a href="https://www.google.com/maps/search/?api=1&amp;query=North+End+Boston+MA" target="_blank" rel="noopener">Map<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+          </div>
+        </div>
+      </article>
+
+      <article class="event-card is-clickable" data-modal="old-north-church">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7f/Old_North_Church%2C_Boston_%282025%29.jpg/960px-Old_North_Church%2C_Boston_%282025%29.jpg" alt="Old North Church in Boston's North End, with its white steeple" loading="lazy" decoding="async" data-abbr="ON">
+        </div>
+        <div class="card-body">
+          <h3>Old North Church</h3>
+          <p class="summary">&ldquo;One if by land, two if by sea&rdquo; &mdash; the two lanterns went up in this steeple on April 18, 1775. Oldest church building in Boston, and still an active parish.</p>
+          <ul class="tags">
+            <li class="tag"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>45&ndash;60 min</li>
+            <li class="tag admission"><svg class="icon" aria-hidden="true"><use href="#i-ticket"/></svg>Tour admission</li>
+          </ul>
+          <div class="card-links">
+            <button class="details-btn" type="button" data-modal="old-north-church">History &amp; sources</button>
+            <a href="https://oldnorth.com" target="_blank" rel="noopener">Site<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+            <a href="https://www.google.com/maps/search/?api=1&amp;query=Old+North+Church+Boston+MA" target="_blank" rel="noopener">Map<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+          </div>
+        </div>
+      </article>
+
+      <article class="event-card is-clickable" data-modal="paul-revere-house">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/2017_Paul_Revere_House_from_east.jpg/960px-2017_Paul_Revere_House_from_east.jpg" alt="The Paul Revere House, a dark wooden 17th-century house in the North End" loading="lazy" decoding="async" data-abbr="PR">
+        </div>
+        <div class="card-body">
+          <h3>Paul Revere House</h3>
+          <p class="summary">Built around 1680 and the oldest building left in downtown Boston. Revere owned it for thirty years, and left from here on the midnight ride.</p>
+          <ul class="tags">
+            <li class="tag"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>30&ndash;45 min</li>
+            <li class="tag admission"><svg class="icon" aria-hidden="true"><use href="#i-ticket"/></svg>Admission</li>
+          </ul>
+          <div class="card-links">
+            <button class="details-btn" type="button" data-modal="paul-revere-house">History &amp; sources</button>
+            <a href="https://www.paulreverehouse.org" target="_blank" rel="noopener">Site<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+            <a href="https://www.google.com/maps/search/?api=1&amp;query=Paul+Revere+House+Boston+MA" target="_blank" rel="noopener">Map<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+          </div>
+        </div>
+      </article>
+
+      <article class="event-card is-clickable" data-modal="boston-common">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/Boston_Common_in_the_fall_03.jpg/960px-Boston_Common_in_the_fall_03.jpg" alt="Boston Common in autumn colour" loading="lazy" decoding="async" data-abbr="BC">
+          <span class="card-time"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>Lunch</span>
+        </div>
+        <div class="card-body">
+          <h3>Boston Common</h3>
+          <p class="summary">The oldest public park in the country, 1634, and in early October it should be turning. Good place to sit down for an hour in the middle of a walking day.</p>
+          <ul class="tags">
+            <li class="tag"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>1 hr</li>
+            <li class="tag free"><svg class="icon" aria-hidden="true"><use href="#i-sun"/></svg>Free</li>
+          </ul>
+          <div class="card-links">
+            <button class="details-btn" type="button" data-modal="boston-common">History &amp; sources</button>
+            <a href="https://www.google.com/maps/search/?api=1&amp;query=Boston+Common+Boston+MA" target="_blank" rel="noopener">Map<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+          </div>
+        </div>
+      </article>
+
+      <article class="event-card is-clickable" data-modal="beacon-hill">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/Acorn_Street_Beacon_Hill_Boston_Massachusetts.jpg/960px-Acorn_Street_Beacon_Hill_Boston_Massachusetts.jpg" alt="Acorn Street on Beacon Hill, cobbled and lined with brick row houses" loading="lazy" decoding="async" data-abbr="BH">
+          <span class="card-time"><svg class="icon" aria-hidden="true"><use href="#i-book"/></svg>Bookshop stop</span>
+        </div>
+        <div class="card-body">
+          <h3>Beacon Hill &amp; the bookshop</h3>
+          <p class="summary">Gas lamps, brick sidewalks and Federal row houses. Acorn Street is the most photographed street in America; Beacon Hill Books &amp; Café on Charles Street is four floors of books with a café in the basement.</p>
+          <ul class="tags">
+            <li class="tag"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>1&ndash;2 hrs</li>
+            <li class="tag free"><svg class="icon" aria-hidden="true"><use href="#i-walk"/></svg>Free</li>
+          </ul>
+          <div class="card-links">
+            <button class="details-btn" type="button" data-modal="beacon-hill">History &amp; sources</button>
+            <a href="https://beaconhillbooks.com/" target="_blank" rel="noopener">Bookshop<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+            <a href="https://www.google.com/maps/search/?api=1&amp;query=Acorn+Street+Beacon+Hill+Boston+MA" target="_blank" rel="noopener">Map<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+          </div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ===== DAY 7 ===== -->
+<section class="day-section" id="day-7" style="--day-accent: var(--day-7)" aria-labelledby="day-7-h">
+  <div class="container">
+    <div class="day-header">
+      <p class="day-number">Day 7</p>
+      <h2 id="day-7-h">Plymouth<span class="today-badge">Today</span></h2>
+      <p class="day-date">Friday, October 9, 2026 &middot; Plymouth</p>
+      <p class="day-summary">A guide in period clothing walks us through the actual streets of the 1620 settlement, and then the Mayflower II is tied up a few minutes away. Beach in the evening. Plymouth is only about 25 minutes from the Marshfield house, so this is an easy day.</p>
+      <ul class="day-flags">
+        <li><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>Arrive by 11:00 AM</li>
+        <li><svg class="icon" aria-hidden="true"><use href="#i-walk"/></svg>1.5-mile walking tour</li>
+        <li><svg class="icon" aria-hidden="true"><use href="#i-sun"/></svg>Beach evening</li>
+      </ul>
+    </div>
+
+    <ol class="timeline">
+      <li><span class="t-time">10:45 AM</span><span class="t-body"><span class="t-what">Arrive at The Jenney</span><span class="t-detail">48 Summer Street. Free parking in the Spring Lane lot. <strong>They require arrival 15 minutes before departure</strong> &mdash; miss it and the ticket is gone.</span></span></li>
+      <li><span class="t-time">11:15 AM</span><span class="t-body"><span class="t-what">Walking tour departs</span><span class="t-detail">90 minutes, about 1.5 miles, stroller and wheelchair friendly. Brewster Gardens, Plymouth Rock, the waterfront monuments, Cole&rsquo;s Hill, Leyden Street and Town Square. Rain or shine.</span></span></li>
+      <li><span class="t-time">1:00 PM</span><span class="t-body"><span class="t-what">Lunch on the waterfront</span></span></li>
+      <li><span class="t-time">2:30 PM</span><span class="t-body"><span class="t-what">Mayflower II</span><span class="t-detail">Tied up at State Pier. Tickets are good all day, so buying in the morning is fine.</span></span></li>
+      <li><span class="t-time">Evening</span><span class="t-body"><span class="t-what">Back to Marshfield &mdash; beach</span></span></li>
+    </ol>
+
+    <div class="events-grid">
+      <article class="event-card is-clickable" data-modal="jenney-tour">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/Jenney_Grist_Mill%2C_Plymouth_MA.jpg/960px-Jenney_Grist_Mill%2C_Plymouth_MA.jpg" alt="The Jenney Grist Mill on Town Brook in Plymouth" loading="lazy" decoding="async" data-abbr="TJ">
+          <span class="card-time"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>11:15 AM</span>
+        </div>
+        <div class="card-body">
+          <h3>The Jenney walking tour</h3>
+          <p class="summary">Ninety minutes with a guide in period dress, covering why the Pilgrims came, what they found, and whether Plymouth Rock is actually the rock. Starts at 48 Summer Street.</p>
+          <ul class="tags">
+            <li class="tag"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>90 min</li>
+            <li class="tag"><svg class="icon" aria-hidden="true"><use href="#i-walk"/></svg>1.5 miles</li>
+            <li class="tag admission"><svg class="icon" aria-hidden="true"><use href="#i-alert"/></svg>Non-refundable</li>
+          </ul>
+          <div class="card-links">
+            <button class="details-btn" type="button" data-modal="jenney-tour">Full details</button>
+            <a href="https://booking.attractionsuite.com/Attraction/ec/selectTourCountAndCategory.action?tourNo=VH101000&amp;sid=y_GW6TZiJBc" target="_blank" rel="noopener">Book<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+            <a href="https://www.google.com/maps/search/?api=1&amp;query=48+Summer+Street+Plymouth+MA" target="_blank" rel="noopener">Map<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+          </div>
+        </div>
+      </article>
+
+      <article class="event-card is-clickable" data-modal="plymouth-rock">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9d/Plymouth_Rock%2C_Plymouth%2C_MA%2C_jjron_03.05.2012.jpg/960px-Plymouth_Rock%2C_Plymouth%2C_MA%2C_jjron_03.05.2012.jpg" alt="Plymouth Rock beneath its granite portico" loading="lazy" decoding="async" data-abbr="PR">
+        </div>
+        <div class="card-body">
+          <h3>Plymouth Rock</h3>
+          <p class="summary">Smaller than anyone expects, and with a complicated claim to being the landing spot. On the Jenney tour route, so no separate stop needed.</p>
+          <ul class="tags">
+            <li class="tag"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>15&ndash;30 min</li>
+            <li class="tag free">Free</li>
+            <li class="tag"><svg class="icon" aria-hidden="true"><use href="#i-walk"/></svg>On the tour</li>
+          </ul>
+          <div class="card-links">
+            <button class="details-btn" type="button" data-modal="plymouth-rock">History &amp; sources</button>
+            <a href="https://www.google.com/maps/search/?api=1&amp;query=Plymouth+Rock+Plymouth+MA" target="_blank" rel="noopener">Map<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+          </div>
+        </div>
+      </article>
+
+      <article class="event-card is-clickable" data-modal="mayflower-ii">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Mayflower_II.jpg/960px-Mayflower_II.jpg" alt="Mayflower II, a reproduction 17th-century ship, berthed at Plymouth" loading="lazy" decoding="async" data-abbr="M2">
+          <span class="card-time"><svg class="icon" aria-hidden="true"><use href="#i-ticket"/></svg>All-day ticket</span>
+        </div>
+        <div class="card-body">
+          <h3>Mayflower II</h3>
+          <p class="summary">A full-scale reproduction that actually sailed the Atlantic in 1957. Going below deck is the part that lands &mdash; 102 passengers spent 66 days in that space.</p>
+          <ul class="tags">
+            <li class="tag"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>60&ndash;90 min</li>
+            <li class="tag admission"><svg class="icon" aria-hidden="true"><use href="#i-ticket"/></svg>Good all day</li>
+          </ul>
+          <div class="card-links">
+            <button class="details-btn" type="button" data-modal="mayflower-ii">History &amp; sources</button>
+            <a href="https://plimothpatuxet.centeredgeonline.com/retail/items/g/MuseumTickets" target="_blank" rel="noopener">Tickets<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+            <a href="https://www.google.com/maps/search/?api=1&amp;query=Mayflower+II+State+Pier+Plymouth+MA" target="_blank" rel="noopener">Map<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+          </div>
+        </div>
+      </article>
+
+      <article class="event-card is-clickable" data-modal="leyden-street">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Leyden_Street_in_Plymouth_Mass.jpg/960px-Leyden_Street_in_Plymouth_Mass.jpg" alt="Leyden Street in Plymouth, lined with historic houses" loading="lazy" decoding="async" data-abbr="LS">
+        </div>
+        <div class="card-body">
+          <h3>Leyden Street &amp; Cole&rsquo;s Hill</h3>
+          <p class="summary">Leyden Street is the first street the colonists laid out, in 1620. Cole&rsquo;s Hill above it is where they buried their dead that first winter at night, so the Wampanoag wouldn&rsquo;t see how few were left.</p>
+          <ul class="tags">
+            <li class="tag free"><svg class="icon" aria-hidden="true"><use href="#i-walk"/></svg>On the tour</li>
+          </ul>
+          <div class="card-links">
+            <button class="details-btn" type="button" data-modal="leyden-street">History &amp; sources</button>
+            <a href="https://www.google.com/maps/search/?api=1&amp;query=Leyden+Street+Plymouth+MA" target="_blank" rel="noopener">Map<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+          </div>
+        </div>
+      </article>
+    </div>
+
+    <p class="notice">
+      <svg class="icon" aria-hidden="true"><use href="#i-alert"/></svg>
+      <span><strong>The Jenney tour has real conditions.</strong> All sales are final and non-refundable. It needs a minimum number of people to run &mdash; if they don&rsquo;t reach it they&rsquo;ll tell us the day before and we can switch to another tour. Arrive 15 minutes early or the reservation is forfeit. If <em>they</em> cancel, it&rsquo;s a full refund. And double-check the booking date is Oct 9.</span>
+    </p>
+  </div>
+</section>
+
+<!-- ===== DAY 8 ===== -->
+<section class="day-section" id="day-8" style="--day-accent: var(--day-8)" aria-labelledby="day-8-h">
+  <div class="container">
+    <div class="day-header">
+      <p class="day-number">Day 8</p>
+      <h2 id="day-8-h">Beach day &amp; first departures<span class="today-badge">Today</span></h2>
+      <p class="day-date">Saturday, October 10, 2026 &middot; Marshfield</p>
+      <p class="day-summary">LB and Dane head to Logan. Everyone else has an unscheduled day &mdash; which by day eight is the point. The beach is a few minutes away, Plymouth is worth a second pass, and nothing is booked.</p>
+      <ul class="day-flags">
+        <li><svg class="icon" aria-hidden="true"><use href="#i-plane"/></svg>LB &amp; Dane fly out</li>
+        <li><svg class="icon" aria-hidden="true"><use href="#i-sun"/></svg>Nothing booked</li>
+      </ul>
+    </div>
+
+    <div class="events-grid">
+      <article class="event-card">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/Boston_Logan_International_Airport_on_Massachusetts_Bay_%28iss072e311839%29_%28cropped%29.jpg/960px-Boston_Logan_International_Airport_on_Massachusetts_Bay_%28iss072e311839%29_%28cropped%29.jpg" alt="Boston Logan International Airport from the air" loading="lazy" decoding="async" data-abbr="BOS">
+        </div>
+        <div class="card-body">
+          <h3>LB &amp; Dane to Logan</h3>
+          <p class="day-note">About an hour from Marshfield by car, longer with Saturday traffic through the tunnels. Allow two hours at the airport on top of that. The commuter rail plus a Logan connection is the backup if the cars are needed elsewhere.</p>
+          <ul class="tags">
+            <li class="tag"><svg class="icon" aria-hidden="true"><use href="#i-car"/></svg>~1 hr drive</li>
+            <li class="tag"><svg class="icon" aria-hidden="true"><use href="#i-train"/></svg>Rail backup</li>
+          </ul>
+          <div class="card-links">
+            <a href="https://www.google.com/maps/dir/?api=1&amp;origin=134+Central+Ave+Marshfield+MA&amp;destination=Boston+Logan+International+Airport" target="_blank" rel="noopener">Directions<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+          </div>
+        </div>
+      </article>
+
+      <article class="event-card">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Duxbury_Beach%2C_Duxbury_MA.jpg/960px-Duxbury_Beach%2C_Duxbury_MA.jpg" alt="A wide South Shore beach with dune grass" loading="lazy" decoding="async" data-abbr="BCH">
+        </div>
+        <div class="card-body">
+          <h3>Beach &amp; the South Shore</h3>
+          <p class="day-note">Marshfield&rsquo;s beaches are a walk or a short drive from the house, and October means they&rsquo;re empty. Duxbury Beach south of us is a long barrier stretch if anyone wants a proper walk.</p>
+          <ul class="tags">
+            <li class="tag free"><svg class="icon" aria-hidden="true"><use href="#i-sun"/></svg>Free</li>
+            <li class="tag"><svg class="icon" aria-hidden="true"><use href="#i-walk"/></svg>As long as you like</li>
+          </ul>
+        </div>
+      </article>
+
+      <article class="event-card">
+        <div class="card-body">
+          <h3>If anyone wants more</h3>
+          <p class="day-note">Plimoth Patuxet&rsquo;s recreated 1627 village and Wampanoag homesite are next to Plymouth and take a good half-day &mdash; the one big thing this itinerary doesn&rsquo;t otherwise make room for. Otherwise: the grist mill on Town Brook, Pilgrim Hall Museum, or simply nothing at all.</p>
+          <ul class="tags">
+            <li class="tag"><svg class="icon" aria-hidden="true"><use href="#i-info"/></svg>Optional</li>
+          </ul>
+          <div class="card-links">
+            <a href="https://plimoth.org" target="_blank" rel="noopener">Plimoth Patuxet<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+          </div>
+        </div>
+      </article>
+    </div>
+
+    <p class="notice">
+      <svg class="icon" aria-hidden="true"><use href="#i-info"/></svg>
+      <span>The planning notes labelled this day &ldquo;Day 7 (Oct 9th, Sat)&rdquo;. October 9, 2026 is a <strong>Friday</strong> &mdash; that&rsquo;s the Plymouth day &mdash; so this one is <strong>Saturday, October 10</strong>. Worth checking LB and Dane&rsquo;s flight date against that.</span>
+    </p>
+  </div>
+</section>
+
+<!-- ===== DAY 9 ===== -->
+<section class="day-section" id="day-9" style="--day-accent: var(--day-9)" aria-labelledby="day-9-h">
+  <div class="container">
+    <div class="day-header">
+      <p class="day-number">Day 9</p>
+      <h2 id="day-9-h">Fly home<span class="today-badge">Today</span></h2>
+      <p class="day-date">Sunday, October 11, 2026</p>
+      <p class="day-summary">Check out by 11:00 AM. Greg and Eliz are on the early flight and return one car on the way; Steven and Kat keep the second car on a timetable still to be worked out. Anyone on a later flight can take the train.</p>
+      <ul class="day-flags">
+        <li><svg class="icon" aria-hidden="true"><use href="#i-home"/></svg>Check out by 11:00 AM</li>
+      </ul>
+    </div>
+
+    <ol class="timeline">
+      <li><span class="t-time">9:00 AM</span><span class="t-body"><span class="t-what">Greg &amp; Eliz return car #1</span><span class="t-detail">Then a 10:30 AM departure. Leave the house early &mdash; the rental return and shuttle eat time.</span></span></li>
+      <li><span class="t-time">11:00 AM</span><span class="t-body"><span class="t-what">Check out of the Marshfield house</span></span></li>
+      <li><span class="t-time">TBD</span><span class="t-body"><span class="t-what">Steven &amp; Kat with car #2</span><span class="t-detail">Timetable still open &mdash; useful for covering anyone else&rsquo;s flight.</span></span></li>
+      <li><span class="t-time">Any time</span><span class="t-body"><span class="t-what">Train option for later flights</span><span class="t-detail">Commuter rail to Boston, then the Silver Line or Blue Line to Logan. Slower but it removes a car from the equation.</span></span></li>
+    </ol>
+
+    <div class="events-grid">
+      <article class="event-card">
+        <div class="card-img">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Inbound_train_from_Greenbush_at_JFK-UMass_July_2021.jpg/960px-Inbound_train_from_Greenbush_at_JFK-UMass_July_2021.jpg" alt="An MBTA commuter rail train" loading="lazy" decoding="async" data-abbr="MBTA">
+        </div>
+        <div class="card-body">
+          <h3>Getting to Logan without a car</h3>
+          <p class="day-note">Commuter rail into South Station, then the Silver Line SL1 bus straight to the terminals &mdash; free in that direction. Sunday service is thinner than weekdays, so check the timetable before relying on it.</p>
+          <ul class="tags">
+            <li class="tag"><svg class="icon" aria-hidden="true"><use href="#i-train"/></svg>Rail + Silver Line</li>
+            <li class="tag"><svg class="icon" aria-hidden="true"><use href="#i-alert"/></svg>Sunday schedule</li>
+          </ul>
+          <div class="card-links">
+            <a href="https://www.mbta.com/schedules/CR-Greenbush/timetable" target="_blank" rel="noopener">Timetable<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+            <a href="https://www.mbta.com/destinations/logan-airport" target="_blank" rel="noopener">Logan by T<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+          </div>
+        </div>
+      </article>
+
+      <article class="event-card">
+        <div class="card-body">
+          <h3>Before you lock the door</h3>
+          <p class="day-note">Chargers by the beds, the beach stuff that went out to dry, whatever&rsquo;s still in the fridge, and the receipts &mdash; LB has been collecting them all week.</p>
+          <ul class="tags">
+            <li class="tag"><svg class="icon" aria-hidden="true"><use href="#i-info"/></svg>Sweep the house</li>
+          </ul>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="container">
+    <p>New England family trip &mdash; October 3&ndash;11, 2026</p>
+    <p>Built from the trip planning notes. Photos via Wikimedia Commons; historical background linked to primary sources on each card.</p>
+    <p><a href="gallery.html">The Midnight Gallery &rarr;</a></p>
+  </div>
+</footer>
+
+<button class="scroll-top" id="scrollTop" type="button" aria-label="Back to top">
+  <svg class="icon" aria-hidden="true"><use href="#i-up"/></svg>
+</button>
+
+<!-- ===== MODAL ===== -->
+<div class="modal-overlay" id="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle" hidden>
+  <div class="modal" id="modalPanel">
+    <button class="modal-close" id="modalClose" type="button" aria-label="Close">
+      <svg class="icon" aria-hidden="true"><use href="#i-close"/></svg>
+    </button>
+    <div class="modal-img" id="modalImg"></div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script>
+"use strict";
+
+const IMG = "https://upload.wikimedia.org/wikipedia/commons/thumb/";
+function img(path) { return IMG + path + "/960px-" + path.split("/").pop(); }
+
+/* Each entry: the card's deeper history plus links that go to a primary source
+   or the institution itself, never to a ticket page. */
+const SITE_DATA = {
+
+"boston-logan": {
+  name: "Boston Logan International Airport",
+  img: img("0/08/Boston_Logan_International_Airport_on_Massachusetts_Bay_%28iss072e311839%29_%28cropped%29.jpg"),
+  time: "Arrivals across the day", admission: "—",
+  map: "https://www.google.com/maps/search/?api=1&query=Boston+Logan+International+Airport",
+  summary: "<p>Logan opened in 1923 on filled tidal flats in East Boston, as Boston Airport. During the Second World War the Army Air Forces flew anti-submarine patrols from it, and the runways were extended into the harbour afterwards. It was renamed in 1956 for Edward Lawrence Logan, a Spanish-American War officer and Massachusetts judge who, as it happens, never flew.</p><p>It now moves more than 40 million passengers a year through terminals A to E, and it is one of the closest major airports in the country to the downtown it serves &mdash; roughly three miles, under the harbour.</p>",
+  sources: [
+    { name: "Massport — Logan Airport history", url: "https://www.massport.com/logan-airport/about-logan" },
+    { name: "Wikipedia — Logan International Airport", url: "https://en.wikipedia.org/wiki/Logan_International_Airport" }
+  ]
+},
+
+"historic-deerfield": {
+  name: "Historic Deerfield",
+  img: img("9/90/Dwight_House%2C_Historic_Deerfield.jpg"),
+  time: "3–5 hrs", admission: "$20 — good all day",
+  map: "https://www.google.com/maps/search/?api=1&query=Historic+Deerfield+Deerfield+MA",
+  summary: "<p>Deerfield was the north-western edge of English settlement in the 1600s, which made it dangerous. On the night of February 29, 1704, a French and Native force of about 300 attacked the palisaded village: roughly 50 residents were killed and 112 taken captive, marched 300 miles north to Canada in winter. The raid became one of the most retold events in early New England, and the accounts left behind &mdash; especially the minister John Williams&rsquo;s own narrative of his captivity &mdash; are a primary source historians still work from.</p><p>The village that stands today preserves a mile-long street of twelve house museums built between about 1720 and 1850, plus the Flynt Center with over 25,000 objects of early American furniture, silver, textiles and ceramics. It is less a reconstruction than a street that never stopped being lived on.</p>",
+  sources: [
+    { name: "Historic Deerfield", url: "https://www.historic-deerfield.org" },
+    { name: "Raid on Deerfield: The Many Stories of 1704", url: "https://www.1704.deerfield.history.museum/" },
+    { name: "Memorial Hall Museum — American Centuries archive", url: "https://www.americancenturies.mass.edu/" },
+    { name: "John Williams, \"The Redeemed Captive\" (1707), full text", url: "https://www.gutenberg.org/ebooks/39033" }
+  ]
+},
+
+"rockwell-museum": {
+  name: "Norman Rockwell Museum",
+  img: img("9/92/Rockwell_museum.jpg"),
+  time: "2–3 hrs", admission: "$25 · $23 seniors & retired military",
+  map: "https://www.google.com/maps/search/?api=1&query=Norman+Rockwell+Museum+Stockbridge+MA",
+  summary: "<p>Rockwell moved to Stockbridge in 1953 and worked there for the last 25 years of his life. The museum holds the largest collection of his original paintings and drawings &mdash; about 1,000 works &mdash; along with the complete <em>Saturday Evening Post</em> cover archive, 323 covers over 47 years.</p><p>The paintings worth crossing the state for are the ones from the 1960s, after he left the <em>Post</em> and started working for <em>Look</em>: <em>The Problem We All Live With</em>, which puts six-year-old Ruby Bridges walking to school between four federal marshals, and <em>Murder in Mississippi</em>. His actual studio was moved to the grounds and is open in season, left as it was the day he stopped working in it.</p>",
+  sources: [
+    { name: "Norman Rockwell Museum", url: "https://www.nrm.org/" },
+    { name: "Museum collection search", url: "https://www.nrm.org/collections/" },
+    { name: "Wikipedia — Norman Rockwell", url: "https://en.wikipedia.org/wiki/Norman_Rockwell" }
+  ]
+},
+
+"old-manse": {
+  name: "The Old Manse",
+  img: img("3/3f/Old_Manse_from_afar.jpg"),
+  time: "60–90 min", admission: "Tour admission",
+  map: "https://www.google.com/maps/search/?api=1&query=Old+Manse+Concord+MA",
+  summary: "<p>Built in 1770 for the Rev. William Emerson, whose family stood at these windows on April 19, 1775 and watched the fight at the North Bridge a few hundred yards away. Emerson went out as chaplain to the militia and died of camp fever the following year.</p><p>His grandson Ralph Waldo Emerson lived here in 1834–35 and wrote the essay <em>Nature</em> in an upstairs room &mdash; the founding document of American Transcendentalism. Nathaniel Hawthorne rented the house in 1842 as a newlywed with Sophia Peabody, named it the Old Manse, and wrote <em>Mosses from an Old Manse</em> there. The two of them scratched messages to each other into a window pane with Sophia&rsquo;s diamond ring; the glass is still in the frame. Thoreau planted the vegetable garden as a wedding gift.</p>",
+  sources: [
+    { name: "The Trustees — The Old Manse", url: "https://thetrustees.org/place/the-old-manse/" },
+    { name: "Emerson, \"Nature\" (1836), full text", url: "https://www.gutenberg.org/ebooks/29433" },
+    { name: "Hawthorne, \"Mosses from an Old Manse\", full text", url: "https://www.gutenberg.org/ebooks/512" },
+    { name: "Library of Congress HABS survey photographs", url: "https://www.loc.gov/pictures/item/ma0272/" }
+  ]
+},
+
+"walden-pond": {
+  name: "Walden Pond",
+  img: img("c/c7/Walden_Pond_outlook.jpg"),
+  time: "1–1.5 hrs for a picnic", admission: "Parking fee",
+  map: "https://www.google.com/maps/search/?api=1&query=Walden+Pond+Concord+MA",
+  summary: "<p>Thoreau moved into a one-room cabin he built on Emerson&rsquo;s woodlot on July 4, 1845, and stayed two years, two months and two days. He was not a hermit &mdash; the cabin was a 20-minute walk from town, his mother did some of his laundry, and he had visitors constantly. That was rather the point: he wanted to test how little a person actually needed, within sight of everyone else&rsquo;s arrangements.</p><p><em>Walden</em> took him nine years and seven drafts to finish after he left. The pond itself is a kettle hole left by the retreating ice sheet, 102 feet deep and unusually clear; Thoreau sounded it himself through the ice and published the depth chart, and his figures were close to right. A replica cabin stands near the parking lot; the original site is marked by a cairn across the water.</p>",
+  sources: [
+    { name: "Mass DCR — Walden Pond State Reservation", url: "https://www.mass.gov/locations/walden-pond-state-reservation" },
+    { name: "The Walden Woods Project", url: "https://www.walden.org/" },
+    { name: "Thoreau, \"Walden\" (1854), full text", url: "https://www.gutenberg.org/ebooks/205" },
+    { name: "Thoreau's journals, digitised", url: "https://www.walden.org/collection/journals/" }
+  ]
+},
+
+"orchard-house": {
+  name: "Orchard House",
+  img: img("4/47/Orchard_House_from_Little_Women.jpeg"),
+  time: "60–90 min", admission: "$15 · $12 seniors",
+  map: "https://www.google.com/maps/search/?api=1&query=Orchard+House+Concord+MA",
+  summary: "<p>The Alcotts lived here from 1858 to 1877 &mdash; the longest they stayed anywhere, after more than twenty moves. Louisa wrote <em>Little Women</em> in the spring of 1868, in about ten weeks, at a half-moon shelf desk her father Bronson built into the wall between her bedroom windows. She did not want to write it; her publisher asked for a book for girls and she thought the subject dull.</p><p>It sold immediately and never went out of print. The house is remarkable because roughly four-fifths of what&rsquo;s in it belonged to the family, including May Alcott&rsquo;s drawings still on her bedroom walls &mdash; her parents let her draw directly on the plaster. Bronson&rsquo;s School of Philosophy stands up the hill behind the house.</p>",
+  sources: [
+    { name: "Louisa May Alcott's Orchard House", url: "https://louisamayalcott.org" },
+    { name: "Alcott, \"Little Women\" (1868), full text", url: "https://www.gutenberg.org/ebooks/514" },
+    { name: "Houghton Library — Alcott family papers", url: "https://hollisarchives.lib.harvard.edu/repositories/24/resources/2130" }
+  ]
+},
+
+"sleepy-hollow": {
+  name: "Sleepy Hollow Cemetery",
+  img: img("5/5a/Thoreau-gravesite.jpg"),
+  time: "45–60 min", admission: "Free",
+  map: "https://www.google.com/maps/search/?api=1&query=Sleepy+Hollow+Cemetery+Concord+MA",
+  summary: "<p>Consecrated in 1855 with an address by Emerson, who argued that a burial ground should be a landscape rather than a grid. Authors Ridge, up a short slope from the entrance, holds Emerson, Thoreau, Hawthorne and the Alcotts within a few steps of one another &mdash; four of the writers who made American literature, buried as neighbours because they were neighbours.</p><p>Emerson&rsquo;s marker is an unpolished block of rose quartz. Thoreau&rsquo;s is a small stone reading only &ldquo;Henry&rdquo;. Visitors leave pencils, pine cones and notes on both. Further into the cemetery, the Melvin Memorial by Daniel Chester French &mdash; who went on to carve the seated Lincoln in Washington &mdash; commemorates three Concord brothers killed in the Civil War.</p>",
+  sources: [
+    { name: "Town of Concord — Sleepy Hollow Cemetery", url: "https://concordma.gov/1956/Sleepy-Hollow-Cemetery" },
+    { name: "Emerson's 1855 consecration address", url: "https://www.walden.org/" },
+    { name: "Wikipedia — Sleepy Hollow Cemetery", url: "https://en.wikipedia.org/wiki/Sleepy_Hollow_Cemetery_(Concord,_Massachusetts)" }
+  ]
+},
+
+"concord-town": {
+  name: "Concord town square",
+  img: img("0/08/Wright_Tavern_in_Concord%2C_Mass_2012-0078.jpg"),
+  time: "Flexible", admission: "Free",
+  map: "https://www.google.com/maps/search/?api=1&query=Monument+Square+Concord+MA",
+  summary: "<p>Wright Tavern, built 1747, stands on the square. Both sides used it on April 19, 1775: the Concord minutemen mustered there at dawn, and by mid-morning Major Pitcairn had made it the British command post. The tavern is one of the few buildings in either town that saw the whole day.</p><p>The square was also the centre of Concord&rsquo;s other revolution. Emerson lived a few minutes east, the Alcotts to the west, Hawthorne on the ridge; they walked through here constantly, and the Concord Lyceum lecture series they all spoke at met nearby. The Colonial Inn on the corner has been an inn since 1889 and a building since 1716.</p>",
+  sources: [
+    { name: "Concord Museum", url: "https://concordmuseum.org/" },
+    { name: "NPS — Minute Man National Historical Park", url: "https://www.nps.gov/mima" },
+    { name: "Town of Concord — historic buildings", url: "https://concordma.gov/" }
+  ]
+},
+
+"lexington-green": {
+  name: "Lexington Green",
+  img: img("d/d6/Lexington_Battle_Green%2C_Lexington_MA.jpg"),
+  time: "30–45 min", admission: "Free",
+  map: "https://www.google.com/maps/search/?api=1&query=Lexington+Battle+Green+Lexington+MA",
+  summary: "<p>Just after dawn on April 19, 1775, Captain John Parker drew up about 77 Lexington militiamen on this common as roughly 700 British regulars under Major John Pitcairn came up the road. Parker&rsquo;s order, as his men remembered it, was to let the British pass unless fired upon. Someone fired &mdash; both sides swore for the rest of their lives it was the other &mdash; and in the few minutes that followed eight militiamen were killed and ten wounded. Parker&rsquo;s cousin Jonas was bayoneted where he fell.</p><p>The colonists collected sworn depositions from participants within days and rushed them to London ahead of General Gage&rsquo;s official report, which is why the American version of events reached British newspapers first. That paperwork is still the core evidence for what happened here. The Green is a National Historic Landmark and looks much as it did, right down to the boulder marking Parker&rsquo;s line.</p>",
+  sources: [
+    { name: "Lexington Historical Society", url: "https://www.lexingtonhistory.org" },
+    { name: "NPS — Minute Man NHP", url: "https://www.nps.gov/mima" },
+    { name: "1775 sworn depositions of the Lexington militia", url: "https://www.masshist.org/database/viewer.php?item_id=549" },
+    { name: "American Battlefield Trust — Lexington & Concord", url: "https://www.battlefields.org/learn/revolutionary-war/battles/lexington-and-concord" }
+  ]
+},
+
+"lexington-visitor": {
+  name: "Minute Man NHP visitor center",
+  img: img("7/76/Lexington_Visitor_Center%2C_MA.jpg"),
+  time: "30 min", admission: "Free",
+  map: "https://www.google.com/maps/search/?api=1&query=Minute+Man+Visitor+Center+Lexington+MA",
+  summary: "<p>The park&rsquo;s eastern visitor center, just off Route 2A. It runs a multimedia presentation, <em>The Road to Revolution</em>, that lays out the whole day of April 19 hour by hour &mdash; genuinely the fastest way to understand why the fighting moved the way it did before walking any of it.</p><p>It is also the practical stop: rangers know which houses and taverns are actually staffed that day, which changes week to week in October, and the restrooms are the last reliable ones before the trail.</p>",
+  sources: [
+    { name: "NPS — hours and seasons", url: "https://www.nps.gov/mima/planyourvisit/hours.htm" },
+    { name: "NPS — Minute Man NHP park map", url: "https://www.nps.gov/mima/planyourvisit/maps.htm" }
+  ]
+},
+
+"battle-road": {
+  name: "Battle Road Trail",
+  img: img("0/05/Battle_Road_Trail_boardwalk%2C_Lincoln_MA.jpg"),
+  time: "2–3 hrs", admission: "Free",
+  map: "https://www.google.com/maps/search/?api=1&query=Battle+Road+Trail+Minute+Man+NHP+MA",
+  summary: "<p>The British march out went well enough. The march back did not. From Meriam&rsquo;s Corner in the early afternoon of April 19, militia companies arriving from every surrounding town fired on the column from behind stone walls, barns and trees for sixteen miles. At the bend now called the Bloody Angle the road turns twice in quick succession, and the men waiting there could fire into the column from both sides; eight British soldiers were killed in a few minutes.</p><p>By the time the column reached Charlestown that evening it had lost 73 dead and about 174 wounded. The five-mile trail through the park follows the historic roadbed where it survives, with boardwalks over the wet ground, and passes Meriam&rsquo;s Corner, the Bloody Angle and Hartwell Tavern. The landscape either side is deliberately kept as farmland and woodlot, so the sightlines are roughly what both sides had.</p>",
+  sources: [
+    { name: "NPS — Battle Road Trail guide", url: "https://www.nps.gov/mima/planyourvisit/the-battle-road-trail.htm" },
+    { name: "NPS — the fighting along Battle Road", url: "https://www.nps.gov/mima/learn/historyculture/index.htm" },
+    { name: "American Battlefield Trust — maps of April 19", url: "https://www.battlefields.org/learn/maps/lexington-and-concord-april-19-1775" }
+  ]
+},
+
+"hartwell-tavern": {
+  name: "Hartwell Tavern",
+  img: img("2/25/Hartwell_Tavern_2.jpeg"),
+  time: "30–45 min", admission: "Free",
+  map: "https://www.google.com/maps/search/?api=1&query=Hartwell+Tavern+Lincoln+MA",
+  summary: "<p>Ephraim and Elizabeth Hartwell were running this as a licensed tavern on the Bay Road in 1775, and the fighting came past their door. Elizabeth&rsquo;s sister lived at the next farm; three of the Hartwells&rsquo; sons were in the militia that day.</p><p>The building was stripped back to its 18th-century fabric by the Park Service and is furnished as a working tavern rather than a parlour museum. In season, rangers in period clothing demonstrate musket loading and firing on the lawn &mdash; the drill takes about twenty seconds a shot, which explains a great deal about how the day went.</p>",
+  sources: [
+    { name: "NPS — Hartwell Tavern", url: "https://www.nps.gov/mima/hartwell-tavern.htm" },
+    { name: "NPS — ranger programmes and demonstrations", url: "https://www.nps.gov/mima/planyourvisit/things2do.htm" },
+    { name: "Wikipedia — Hartwell Tavern", url: "https://en.wikipedia.org/wiki/Hartwell_Tavern" }
+  ]
+},
+
+"buckman-tavern": {
+  name: "Buckman Tavern",
+  img: img("7/78/Buckman_Tavern_1.jpg"),
+  time: "45–60 min", admission: "Admission",
+  map: "https://www.google.com/maps/search/?api=1&query=Buckman+Tavern+Lexington+MA",
+  summary: "<p>Built about 1710 and standing directly on the Green. Parker&rsquo;s militia assembled here around one in the morning of April 19 on the first alarm, were dismissed when the British seemed slow in coming, and waited in the taproom through the small hours until the drum called them out at dawn. Some of them had been awake for 24 hours by the time the shooting started.</p><p>The front door has a hole in it that the tavern has always said was made by a British musket ball. The building is a museum now, furnished to 1775, and the Lexington Historical Society runs it along with the Hancock-Clarke House a few streets away &mdash; where Revere found Hancock and Adams that same night. October hours are reduced, so check before building the day around it.</p>",
+  sources: [
+    { name: "Lexington Historical Society", url: "https://www.lexingtonhistory.org" },
+    { name: "American Battlefield Trust — Buckman Tavern", url: "https://www.battlefields.org/visit/heritage-sites/buckman-tavern" },
+    { name: "Paul Revere's own 1775 deposition on the ride", url: "https://www.masshist.org/database/99" }
+  ]
+},
+
+"adams-visitor": {
+  name: "Adams NHP visitor center",
+  img: img("6/62/Quincy%2C_Massachusetts.jpg"),
+  time: "1 hr", admission: "$15 per adult",
+  map: "https://www.google.com/maps/search/?api=1&query=Adams+National+Historical+Park+Visitor+Center+Quincy+MA",
+  summary: "<p>The park&rsquo;s front door, at 1250 Hancock Street in the Galleria at Presidents Place. A 26-minute film, <em>Enduring Legacy</em>, sets up four generations of the family before you walk into any of their houses, and the trolley to Peace field and the birthplaces leaves from here.</p><p>Two practical points. Entry to the historic houses is by guided tour only, and those tours are reserved in person at this desk on the day &mdash; buying the park pass online does not hold a place. And parking is in the Presidents Place garage next door, which the park validates, so bring the ticket in with you.</p>",
+  sources: [
+    { name: "NPS — fees and passes", url: "https://www.nps.gov/adam/planyourvisit/fees.htm" },
+    { name: "NPS — hours and tour season", url: "https://www.nps.gov/adam/planyourvisit/hours.htm" },
+    { name: "NPS — directions and parking", url: "https://www.nps.gov/adam/planyourvisit/directions.htm" }
+  ]
+},
+
+"peacefield": {
+  name: "The Old House at Peace field",
+  img: img("e/e6/Adams_National_Historical_Park_ADAM4833.jpg"),
+  time: "60–90 min", admission: "Guided tour only",
+  map: "https://www.google.com/maps/search/?api=1&query=Peace+field+Old+House+Adams+NHP+Quincy+MA",
+  summary: "<p>John and Abigail Adams bought this house in 1787 while he was minister in London, sight unseen for Abigail, who arrived to find it far smaller than she had been led to believe and set about enlarging it. Four generations lived here over 140 years: John and Abigail; John Quincy and Louisa Catherine; Charles Francis, the Civil War minister to Britain who kept Britain out of the war; and the historian brothers Henry and Brooks Adams.</p><p>John Adams died in the upstairs study on July 4, 1826 &mdash; the fiftieth anniversary of the Declaration, hours after Jefferson died in Virginia. The family gave the house to the nation in 1946 with almost everything still in it, so what you walk through is not a period recreation but their actual furniture, their pictures on their walls, and Abigail&rsquo;s garden.</p>",
+  sources: [
+    { name: "NPS — Adams National Historical Park", url: "https://www.nps.gov/adam" },
+    { name: "Adams Family Papers — the Adams–Jefferson letters", url: "https://www.masshist.org/adams-papers" },
+    { name: "John & Abigail Adams correspondence, digitised", url: "https://www.masshist.org/digitaladams/archive/" },
+    { name: "Library of Congress — Adams family papers", url: "https://www.loc.gov/collections/adams-family-papers/" }
+  ]
+},
+
+"adams-birthplaces": {
+  name: "The Adams birthplaces",
+  img: img("e/e9/John_Adams_birthplace%2C_Quincy%2C_Massachusetts.JPG"),
+  time: "60–75 min", admission: "Guided tour only",
+  map: "https://www.google.com/maps/search/?api=1&query=John+Adams+Birthplace+Franklin+St+Quincy+MA",
+  summary: "<p>Two 17th-century saltbox farmhouses stand about 75 feet apart on Franklin Street, at the foot of Penn&rsquo;s Hill. John Adams was born in the first in 1735, the son of a shoemaker and farmer. He inherited the second, moved in with Abigail after their marriage in 1764, and John Quincy Adams was born there in 1767 &mdash; the only pair of presidential birthplaces this close together anywhere.</p><p>Adams wrote much of the Massachusetts Constitution of 1780 in the second house. It is the oldest written constitution still in effect anywhere in the world, and James Madison worked from it when drafting the federal one. Abigail ran the farm and wrote her letters to Philadelphia from here through the war years, alone with four children, while he was away for years at a stretch.</p>",
+  sources: [
+    { name: "NPS — John Adams Birthplace", url: "https://www.nps.gov/adam/learn/historyculture/john-adams-birthplace.htm" },
+    { name: "NPS — John Quincy Adams Birthplace", url: "https://www.nps.gov/adam/learn/historyculture/john-quincy-adams-birthplace.htm" },
+    { name: "Massachusetts Constitution of 1780, full text", url: "https://malegislature.gov/laws/constitution" },
+    { name: "\"Remember the Ladies\" — Abigail to John, March 1776", url: "https://www.masshist.org/digitaladams/archive/doc?id=L17760331aa" }
+  ]
+},
+
+"united-first-parish": {
+  name: "United First Parish Church",
+  img: img("f/f5/United_First_Parish_Church%2C_Quincy%2C_MA_enhanced_with_dramatic_sky.jpg"),
+  time: "30–45 min", admission: "Donation",
+  map: "https://www.google.com/maps/search/?api=1&query=United+First+Parish+Church+Quincy+MA",
+  summary: "<p>Designed by Alexander Parris, who also built Quincy Market, and finished in 1828 of Quincy granite from land John Adams left to the parish for the purpose. It is the only church in the United States where two presidents are buried.</p><p>John and Abigail Adams and John Quincy and Louisa Catherine Adams lie in a crypt beneath the portico, in four granite sarcophagi. John Quincy attended this congregation and sat in the family pew upstairs, which is still marked. The crypt is small and plain, and after a day of their houses it is a strange and quiet thing to stand in.</p>",
+  sources: [
+    { name: "United First Parish Church", url: "https://ufpc.org/" },
+    { name: "NPS — the Adams crypt", url: "https://www.nps.gov/adam/learn/historyculture/united-first-parish-church.htm" },
+    { name: "Wikipedia — United First Parish Church", url: "https://en.wikipedia.org/wiki/United_First_Parish_Church" }
+  ]
+},
+
+"stone-library": {
+  name: "Stone Library",
+  img: img("6/68/Adams_National_Park_Stone_Library.jpg"),
+  time: "20–30 min", admission: "Included with the Peace field tour",
+  map: "https://www.google.com/maps/search/?api=1&query=Adams+National+Historical+Park+Quincy+MA",
+  summary: "<p>John Quincy Adams left instructions in his will for a fireproof building to hold the family&rsquo;s books. His son Charles Francis built it in 1870, of Quincy granite with a slate roof and iron shelving, a short walk from the house.</p><p>It holds more than 14,000 volumes in fourteen languages &mdash; John Adams&rsquo;s working library with his arguments scribbled in the margins, John Quincy&rsquo;s classical collection, family diaries and account books. The books are still on the shelves the family put them on, in the order they left them. It is one of the few surviving intact presidential libraries in the original sense of the phrase.</p>",
+  sources: [
+    { name: "NPS — Stone Library", url: "https://www.nps.gov/places/stone-library.htm" },
+    { name: "Massachusetts Historical Society — the Adams library", url: "https://www.masshist.org/adams-papers" },
+    { name: "Library of Congress HABS survey", url: "https://www.loc.gov/pictures/item/ma0435/" }
+  ]
+},
+
+"commuter-rail": {
+  name: "MBTA commuter rail — Greenbush line",
+  img: img("5/5b/Inbound_train_from_Greenbush_at_JFK-UMass_July_2021.jpg"),
+  time: "About 50 min each way", admission: "Zone fare",
+  map: "https://www.google.com/maps/search/?api=1&query=Greenbush+MBTA+station+Scituate+MA",
+  summary: "<p>The Greenbush line runs the South Shore into South Station, roughly 50 minutes end to end. The stations nearest Marshfield are Greenbush in Scituate and North Scituate; both have parking, and both fill on weekday mornings, so arriving 15 minutes before the train is sensible.</p><p>Buy tickets in the MBTA mTicket app before boarding &mdash; buying onboard costs more, and a group of six is easier to handle on one phone than six paper tickets. The line reopened in 2007 on the old Kingston Branch right-of-way, abandoned in 1959, which is why it runs as straight as it does through some very expensive back gardens.</p>",
+  sources: [
+    { name: "MBTA — Greenbush line timetable", url: "https://www.mbta.com/schedules/CR-Greenbush/timetable" },
+    { name: "MBTA — fares and zones", url: "https://www.mbta.com/fares/commuter-rail-fares" },
+    { name: "MBTA — getting to Logan Airport", url: "https://www.mbta.com/destinations/logan-airport" }
+  ]
+},
+
+"north-end": {
+  name: "The North End",
+  img: img("c/ca/Boston_-_North_End_%2848718567143%29.jpg"),
+  time: "2–3 hrs", admission: "Free to wander",
+  map: "https://www.google.com/maps/search/?api=1&query=North+End+Boston+MA",
+  summary: "<p>Boston&rsquo;s oldest neighbourhood, lived in continuously since the 1630s and still following the street plan of a 17th-century port &mdash; which is why the lanes are so narrow. Copp&rsquo;s Hill Burying Ground at the top has stones from 1659, some chipped by British musket practice during the siege.</p><p>Every wave of arrivals passed through: English, then Irish after the famine, then Eastern European Jews, then Italians from the 1880s, who stayed. Paul Revere&rsquo;s house and Old North Church are five minutes apart in the middle of it. Hanover and Salem Streets are the commercial spine; the bakeries on Hanover are the reason most people come, and there is a long-running argument about which one.</p>",
+  sources: [
+    { name: "NPS — Boston National Historical Park", url: "https://www.nps.gov/bost" },
+    { name: "The Freedom Trail Foundation", url: "https://www.thefreedomtrail.org" },
+    { name: "Wikipedia — North End, Boston", url: "https://en.wikipedia.org/wiki/North_End,_Boston" }
+  ]
+},
+
+"old-north-church": {
+  name: "Old North Church",
+  img: img("7/7f/Old_North_Church%2C_Boston_%282025%29.jpg"),
+  time: "45–60 min", admission: "Tour admission",
+  map: "https://www.google.com/maps/search/?api=1&query=Old+North+Church+Boston+MA",
+  summary: "<p>Christ Church in the City of Boston, built 1723, is the oldest church building still standing in the city. On the night of April 18, 1775, the sexton Robert Newman and vestryman John Pulling climbed the steeple and held two lanterns out for about a minute &mdash; long enough for the watchers in Charlestown to see, short enough to avoid the British patrol below. Two lanterns meant the troops were crossing the Charles by water. Newman was arrested the next day.</p><p>Inside are high box pews that families bought and owned, the oldest church bells in North America &mdash; eight of them, cast in Gloucester in 1744, still rung by a change-ringing guild &mdash; and a brass chandelier from 1724. It remains an active Episcopal parish.</p>",
+  sources: [
+    { name: "Old North Illuminated", url: "https://oldnorth.com" },
+    { name: "NPS — Old North Church", url: "https://www.nps.gov/places/old-north-church.htm" },
+    { name: "Longfellow, \"Paul Revere's Ride\" (1860)", url: "https://www.poetryfoundation.org/poems/44178/paul-reveres-ride" }
+  ]
+},
+
+"paul-revere-house": {
+  name: "Paul Revere House",
+  img: img("b/b8/2017_Paul_Revere_House_from_east.jpg"),
+  time: "30–45 min", admission: "Admission",
+  map: "https://www.google.com/maps/search/?api=1&query=Paul+Revere+House+Boston+MA",
+  summary: "<p>Built about 1680 after the great fire, and the oldest building left standing in downtown Boston. Revere bought it in 1770 and owned it for thirty years, living there with his first wife Sara, then his second wife Rachel, his mother, and a great many children &mdash; sixteen in total across both marriages, in a house this size.</p><p>He was a silversmith by trade and rather more besides: he engraved political cartoons, made false teeth, cast bells and cannon, and ran an express courier service for the Boston Committee of Safety, which is what the midnight ride actually was &mdash; a job he had already done several times. He was one of several riders that night, and the only one Longfellow made famous. By 1902 the house was a tenement about to be demolished; his great-grandson bought it and it opened as a museum in 1908, one of the earliest historic house preservations in the country.</p>",
+  sources: [
+    { name: "Paul Revere House", url: "https://www.paulreverehouse.org" },
+    { name: "Revere's own account of the ride, c. 1798", url: "https://www.masshist.org/database/99" },
+    { name: "NPS — Paul Revere House", url: "https://www.nps.gov/places/paul-revere-house.htm" }
+  ]
+},
+
+"boston-common": {
+  name: "Boston Common",
+  img: img("8/8d/Boston_Common_in_the_fall_03.jpg"),
+  time: "1 hr", admission: "Free",
+  map: "https://www.google.com/maps/search/?api=1&query=Boston+Common+Boston+MA",
+  summary: "<p>Bought by the town in 1634 as common grazing and militia training ground, which makes it the oldest public park in the United States. It has been all sorts of things since: a British army camp during the occupation, a hanging ground, a site of anti-slavery meetings and, in 1965, a march led by Martin Luther King Jr.</p><p>Fifty acres, and still the middle of the city. The Freedom Trail starts here. On the Beacon Street edge, facing the State House, Augustus Saint-Gaudens&rsquo;s memorial to Robert Gould Shaw and the 54th Massachusetts &mdash; the Black regiment he commanded and died with at Fort Wagner &mdash; took him fourteen years and is one of the great pieces of American sculpture. Early October should be the beginning of the turn in the trees.</p>",
+  sources: [
+    { name: "City of Boston — Boston Common", url: "https://www.boston.gov/parks/boston-common" },
+    { name: "The Freedom Trail Foundation", url: "https://www.thefreedomtrail.org" },
+    { name: "NPS — Shaw and the 54th Massachusetts Memorial", url: "https://www.nps.gov/boaf/learn/historyculture/shaw.htm" }
+  ]
+},
+
+"beacon-hill": {
+  name: "Beacon Hill",
+  img: img("f/fb/Acorn_Street_Beacon_Hill_Boston_Massachusetts.jpg"),
+  time: "1–2 hrs", admission: "Free",
+  map: "https://www.google.com/maps/search/?api=1&query=Acorn+Street+Beacon+Hill+Boston+MA",
+  summary: "<p>The hill was 60 feet taller before 1811, when they cut the top off and carted it downhill to fill in the Mill Pond &mdash; a lot of Boston is made of the rest of Boston. What went up on the levelled ground was a Federal-style district of brick row houses, gas lamps and brick sidewalks, and it has been protected since 1955.</p><p>Acorn Street, a single block of cobbles where the coachmen of the bigger houses lived, is claimed to be the most photographed street in America. The north slope has a quite different history: it was the centre of free Black Boston in the 19th century, and the Black Heritage Trail runs through it past the African Meeting House of 1806, the oldest Black church building in the country. Beacon Hill Books &amp; Café on Charles Street occupies five floors of a town house, with a café in the basement.</p>",
+  sources: [
+    { name: "NPS — Boston African American National Historic Site", url: "https://www.nps.gov/boaf" },
+    { name: "Beacon Hill Books & Café", url: "https://beaconhillbooks.com/" },
+    { name: "Wikipedia — Beacon Hill, Boston", url: "https://en.wikipedia.org/wiki/Beacon_Hill,_Boston" }
+  ]
+},
+
+"jenney-tour": {
+  name: "The Jenney walking tour",
+  img: img("e/ea/Jenney_Grist_Mill%2C_Plymouth_MA.jpg"),
+  time: "90 min · about 1.5 miles", admission: "Per person · non-refundable",
+  map: "https://www.google.com/maps/search/?api=1&query=48+Summer+Street+Plymouth+MA",
+  summary: "<p>A 90-minute interpretive walk led by a guide in period clothing, covering Brewster Gardens, Plymouth Rock, the waterfront monuments, Cole&rsquo;s Hill, Leyden Street and Town Square &mdash; why the Pilgrims left, what they found, and the evidence for and against the Rock. Departs from 48 Summer Street at The Jenney, with free parking in the Spring Lane lot. The path is stroller and wheelchair friendly; comfortable shoes are the only real requirement.</p><p><strong>The conditions matter.</strong> Arrive 15 minutes before departure &mdash; miss that and the reservation is forfeit, though they may transfer it. All sales are final and non-refundable once processed. The tour needs a minimum number of people to run; if they don&rsquo;t reach it they notify you the day before and you can switch to any other tour. Tours go rain or shine. If The Jenney cancels, it&rsquo;s a full refund.</p>",
+  sources: [
+    { name: "The Jenney — tours", url: "https://www.jenneymuseum.org/" },
+    { name: "Bradford, \"Of Plymouth Plantation\" — the primary account", url: "https://www.gutenberg.org/ebooks/24950" },
+    { name: "Pilgrim Hall Museum", url: "https://www.pilgrimhall.org" }
+  ]
+},
+
+"plymouth-rock": {
+  name: "Plymouth Rock",
+  img: img("9/9d/Plymouth_Rock%2C_Plymouth%2C_MA%2C_jjron_03.05.2012.jpg"),
+  time: "15–30 min", admission: "Free",
+  map: "https://www.google.com/maps/search/?api=1&query=Plymouth+Rock+Plymouth+MA",
+  summary: "<p>No contemporary account mentions a rock. Bradford&rsquo;s journal does not, and neither does anything else written in the colony&rsquo;s first century. The identification comes from 1741, when a 94-year-old church elder named Thomas Faunce &mdash; whose father arrived in 1623 &mdash; was carried down to the shore to point out the stone his father&rsquo;s generation had told him about, because a wharf was about to be built over it.</p><p>It has had a rough time since. It was split in half being moved in 1774, moved again in 1834 and 1880, and chipped at by souvenir hunters for two centuries; what&rsquo;s left is estimated at about a third of the original. The date &ldquo;1620&rdquo; was carved in 1880. The granite portico over it was designed by McKim, Mead &amp; White and finished in 1921. It is much smaller than anyone expects, which is arguably the honest version of the story.</p>",
+  sources: [
+    { name: "Pilgrim Hall Museum — the Rock's history", url: "https://www.pilgrimhall.org" },
+    { name: "Bradford, \"Of Plymouth Plantation\", full text", url: "https://www.gutenberg.org/ebooks/24950" },
+    { name: "Mass DCR — Pilgrim Memorial State Park", url: "https://www.mass.gov/locations/pilgrim-memorial-state-park" }
+  ]
+},
+
+"mayflower-ii": {
+  name: "Mayflower II",
+  img: img("4/4b/Mayflower_II.jpg"),
+  time: "60–90 min", admission: "Museum admission — good all day",
+  map: "https://www.google.com/maps/search/?api=1&query=Mayflower+II+State+Pier+Plymouth+MA",
+  summary: "<p>Not a replica in the model-village sense: Mayflower II was built by hand in Devon in 1955–57 using 17th-century methods, and then actually sailed the Atlantic, arriving in Plymouth in June 1957 after 55 days. It was a gift from Britain marking the wartime alliance, and Alan Villiers sailed her over with a crew of 33.</p><p>She is 106 feet long with a 25-foot beam. Going below decks is the part that lands: 102 passengers and about 30 crew spent 66 days in a space with roughly five feet of headroom, in an Atlantic autumn. Costumed interpreters work the ship. She came back in 2020 from a four-year restoration at Mystic Seaport that replaced much of the hull.</p>",
+  sources: [
+    { name: "Plimoth Patuxet Museums", url: "https://plimoth.org" },
+    { name: "Mystic Seaport — the Mayflower II restoration", url: "https://www.mysticseaport.org/" },
+    { name: "Mayflower passenger list and voyage records", url: "https://mayflowerhistory.com/voyage" }
+  ]
+},
+
+"leyden-street": {
+  name: "Leyden Street & Cole's Hill",
+  img: img("6/6f/Leyden_Street_in_Plymouth_Mass.jpg"),
+  time: "On the walking tour", admission: "Free",
+  map: "https://www.google.com/maps/search/?api=1&query=Leyden+Street+Plymouth+MA",
+  summary: "<p>Leyden Street, laid out in the winter of 1620–21, is the first street the colonists built and the oldest continuously occupied street in New England. It ran from the harbour up to the defensive hill, with house lots assigned by family on either side.</p><p>Cole&rsquo;s Hill above it is the harder place. Roughly half of the 102 passengers died that first winter, of scurvy and pneumonia and exposure, and they were buried here at night without markers so the Wampanoag would not see how few were left to defend the settlement. Bodies were still being turned up by erosion in the 19th century; the remains found were gathered into the sarcophagus that stands there now. The statue of Massasoit, the Wampanoag leader who made the 1621 treaty, looks out over the harbour from the same hill.</p>",
+  sources: [
+    { name: "Bradford, \"Of Plymouth Plantation\", full text", url: "https://www.gutenberg.org/ebooks/24950" },
+    { name: "Plimoth Patuxet — the Wampanoag homesite", url: "https://plimoth.org/" },
+    { name: "Mashpee Wampanoag Tribe", url: "https://mashpeewampanoagtribe-nsn.gov/" },
+    { name: "Pilgrim Hall Museum", url: "https://www.pilgrimhall.org" }
+  ]
+}
+
+};
+
+/* ================= IMAGE FALLBACK =================
+   Images don't bubble error events, so listen in the capture phase. */
+document.addEventListener("error", function (e) {
+  const el = e.target;
+  if (!(el instanceof HTMLImageElement) || el.dataset.failed) return;
+  el.dataset.failed = "1";
+  const holder = el.closest(".card-img, .modal-img");
+  if (holder) holder.innerHTML = '<div class="img-placeholder">' + (el.dataset.abbr || "?") + "</div>";
+}, true);
+
+/* ================= NAV STATE ================= */
+const daySections = Array.from(document.querySelectorAll(".day-section"));
+const navLinks = Array.from(document.querySelectorAll(".days-nav a"));
+const scrollBtn = document.getElementById("scrollTop");
+
+function updateNav() {
+  let current = "";
+  for (const s of daySections) {
+    if (s.getBoundingClientRect().top <= 200) current = s.id;
+  }
+  for (const a of navLinks) {
+    const on = a.getAttribute("href") === "#" + current;
+    if (on) a.setAttribute("aria-current", "true");
+    else a.removeAttribute("aria-current");
+  }
+  scrollBtn.classList.toggle("visible", window.scrollY > 500);
+}
+window.addEventListener("scroll", updateNav, { passive: true });
+window.addEventListener("resize", updateNav, { passive: true });
+updateNav();
+
+scrollBtn.addEventListener("click", function () {
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
+});
+
+document.getElementById("printBtn").addEventListener("click", function () { window.print(); });
+
+/* On narrow screens the tickets table restacks into cards, so each cell needs to
+   carry its own column label. Take them from the header row. */
+(function labelTicketCells() {
+  const table = document.querySelector("table.tickets");
+  if (!table) return;
+  const heads = Array.from(table.querySelectorAll("thead th")).map(function (th) { return th.textContent.trim(); });
+  for (const row of table.querySelectorAll("tbody tr")) {
+    Array.from(row.children).forEach(function (cell, i) {
+      if (cell.tagName === "TD") cell.setAttribute("data-label", heads[i] || "");
+    });
+  }
+})();
+
+/* ================= TOGGLES ================= */
+function store(key, value) {
+  try { localStorage.setItem(key, value); } catch (e) { /* private mode — fine */ }
+}
+function read(key) {
+  try { return localStorage.getItem(key); } catch (e) { return null; }
+}
+
+/* Dark / light. No stored value means "follow the system". */
+const themeBtn = document.getElementById("themeToggle");
+function systemDark() { return window.matchMedia("(prefers-color-scheme: dark)").matches; }
+function applyTheme(theme) {
+  if (theme) document.documentElement.setAttribute("data-theme", theme);
+  else document.documentElement.removeAttribute("data-theme");
+  const dark = theme ? theme === "dark" : systemDark();
+  themeBtn.setAttribute("aria-pressed", String(dark));
+  themeBtn.querySelector("use").setAttribute("href", dark ? "#i-sun" : "#i-moon");
+  themeBtn.title = dark ? "Switch to light" : "Switch to dark";
+}
+applyTheme(read("theme"));
+themeBtn.addEventListener("click", function () {
+  const next = (document.documentElement.getAttribute("data-theme") || (systemDark() ? "dark" : "light")) === "dark" ? "light" : "dark";
+  store("theme", next);
+  applyTheme(next);
+});
+
+/* Colour-vision-friendly palette */
+const colorBtn = document.getElementById("colorToggle");
+if (read("deuteranomaly") === "on") document.body.classList.add("deuteranomaly");
+colorBtn.setAttribute("aria-pressed", String(document.body.classList.contains("deuteranomaly")));
+colorBtn.addEventListener("click", function () {
+  const on = document.body.classList.toggle("deuteranomaly");
+  colorBtn.setAttribute("aria-pressed", String(on));
+  store("deuteranomaly", on ? "on" : "off");
+  if (tripMap) refreshMapColors();
+});
+
+/* ================= COUNTDOWN & TODAY ================= */
+const TRIP = [
+  ["day-1", "2026-10-03"], ["day-2", "2026-10-04"], ["day-3", "2026-10-05"],
+  ["day-4", "2026-10-06"], ["day-5", "2026-10-07"], ["day-6", "2026-10-08"],
+  ["day-7", "2026-10-09"], ["day-8", "2026-10-10"], ["day-9", "2026-10-11"]
+];
+(function markToday() {
+  const now = new Date();
+  const today = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0") + "-" + String(now.getDate()).padStart(2, "0");
+  let matched = false;
+  for (const [id, date] of TRIP) {
+    if (date === today) {
+      const sec = document.getElementById(id);
+      if (sec) sec.classList.add("is-today");
+      const link = document.querySelector('.days-nav a[href="#' + id + '"]');
+      if (link) link.classList.add("is-today");
+      matched = true;
+    }
+  }
+  const el = document.getElementById("countdown");
+  if (!el) return;
+  const start = new Date(2026, 9, 3);
+  const days = Math.ceil((start - new Date(now.getFullYear(), now.getMonth(), now.getDate())) / 86400000);
+  if (matched) { el.textContent = "Today is on the itinerary — scroll to the highlighted day"; el.hidden = false; }
+  else if (days > 0) { el.textContent = days === 1 ? "1 day to go" : days + " days to go"; el.hidden = false; }
+})();
+
+/* ================= MODAL ================= */
+const overlay = document.getElementById("modalOverlay");
+const panel = document.getElementById("modalPanel");
+const closeBtn = document.getElementById("modalClose");
+const modalImg = document.getElementById("modalImg");
+const modalBody = document.getElementById("modalBody");
+let lastFocused = null;
+
+function escHtml(s) {
+  return String(s).replace(/[&<>"']/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+  });
+}
+
+function openModal(key, opener) {
+  const d = SITE_DATA[key];
+  if (!d) return;
+  lastFocused = opener || document.activeElement;
+
+  modalImg.innerHTML = '<img src="' + escHtml(d.img) + '" alt="' + escHtml(d.name) +
+    '" data-abbr="' + escHtml(d.name.slice(0, 2).toUpperCase()) + '">';
+
+  modalBody.innerHTML =
+    '<h2 id="modalTitle">' + escHtml(d.name) + "</h2>" +
+    '<ul class="modal-meta">' +
+      '<li><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>' + escHtml(d.time) + "</li>" +
+      '<li><svg class="icon" aria-hidden="true"><use href="#i-ticket"/></svg>' + escHtml(d.admission) + "</li>" +
+      '<li><a href="' + escHtml(d.map) + '" target="_blank" rel="noopener"><svg class="icon" aria-hidden="true"><use href="#i-pin"/></svg>Google Maps</a></li>' +
+    "</ul>" +
+    "<h3>Background</h3>" +
+    '<div class="modal-summary">' + d.summary + "</div>" +
+    "<h3>Sources &amp; further reading</h3>" +
+    '<ul class="primary-sources">' +
+      d.sources.map(function (s) {
+        return '<li><span class="source-icon"><svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></span>' +
+               '<span class="source-text"><a href="' + escHtml(s.url) + '" target="_blank" rel="noopener">' + escHtml(s.name) + "</a></span></li>";
+      }).join("") +
+    "</ul>";
+
+  overlay.hidden = false;
+  overlay.classList.add("open");
+  document.body.style.overflow = "hidden";
+  closeBtn.focus();
+}
+
+function closeModal() {
+  if (!overlay.classList.contains("open")) return;
+  overlay.classList.remove("open");
+  overlay.hidden = true;
+  document.body.style.overflow = "";
+  if (lastFocused && lastFocused.isConnected) lastFocused.focus();
+  lastFocused = null;
+}
+
+closeBtn.addEventListener("click", closeModal);
+overlay.addEventListener("click", function (e) { if (e.target === overlay) closeModal(); });
+
+document.addEventListener("keydown", function (e) {
+  if (!overlay.classList.contains("open")) return;
+  if (e.key === "Escape") { closeModal(); return; }
+  if (e.key !== "Tab") return;
+  // Keep focus inside the dialog.
+  const focusables = panel.querySelectorAll('a[href], button, [tabindex]:not([tabindex="-1"])');
+  if (!focusables.length) return;
+  const first = focusables[0];
+  const last = focusables[focusables.length - 1];
+  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+});
+
+/* One delegated handler for every opener: the Details button, and the card
+   itself as a convenience for pointer users. */
+document.addEventListener("click", function (e) {
+  const btn = e.target.closest(".details-btn");
+  if (btn) { openModal(btn.dataset.modal, btn); return; }
+  const card = e.target.closest(".event-card.is-clickable");
+  if (!card) return;
+  if (e.target.closest("a, button")) return; // let links and buttons do their own job
+  openModal(card.dataset.modal, card.querySelector(".details-btn") || card);
+});
+
+/* ================= ROUTE MAP ================= */
+const LOCATIONS = [
+  { name: "Boston Logan Airport", day: 1, lat: 42.3656, lng: -71.0096 },
+  { name: "Airbnb — 253 Main St, Wayland", day: 1, lat: 42.3648, lng: -71.3614, lodging: true },
+  { name: "Historic Deerfield", day: 2, lat: 42.5460, lng: -72.6050 },
+  { name: "Norman Rockwell Museum, Stockbridge", day: 2, lat: 42.2856, lng: -73.3406 },
+  { name: "The Old Manse", day: 3, lat: 42.4685, lng: -71.3490 },
+  { name: "Walden Pond", day: 3, lat: 42.4389, lng: -71.3344 },
+  { name: "Orchard House", day: 3, lat: 42.4571, lng: -71.3328 },
+  { name: "Concord town square", day: 3, lat: 42.4604, lng: -71.3489 },
+  { name: "Sleepy Hollow Cemetery", day: 3, lat: 42.4670, lng: -71.3260 },
+  { name: "Lexington Green", day: 4, lat: 42.4487, lng: -71.2300 },
+  { name: "Minute Man visitor center", day: 4, lat: 42.4490, lng: -71.2670 },
+  { name: "Battle Road Trail", day: 4, lat: 42.4420, lng: -71.2920 },
+  { name: "Hartwell Tavern", day: 4, lat: 42.4310, lng: -71.2810 },
+  { name: "Airbnb — 134 Central Ave, Marshfield", day: 4, lat: 42.0920, lng: -70.6640, lodging: true },
+  { name: "Adams NHP visitor center", day: 5, lat: 42.2529, lng: -71.0023 },
+  { name: "The Old House at Peace field", day: 5, lat: 42.2565, lng: -71.0044 },
+  { name: "Adams birthplaces, Penn's Hill", day: 5, lat: 42.2339, lng: -71.0043 },
+  { name: "United First Parish Church", day: 5, lat: 42.2521, lng: -71.0027 },
+  { name: "South Station", day: 6, lat: 42.3519, lng: -71.0552 },
+  { name: "North End", day: 6, lat: 42.3647, lng: -71.0542 },
+  { name: "Old North Church", day: 6, lat: 42.3664, lng: -71.0545 },
+  { name: "Paul Revere House", day: 6, lat: 42.3637, lng: -71.0535 },
+  { name: "Boston Common", day: 6, lat: 42.3550, lng: -71.0654 },
+  { name: "Beacon Hill", day: 6, lat: 42.3576, lng: -71.0700 },
+  { name: "The Jenney, 48 Summer St", day: 7, lat: 41.9560, lng: -70.6690 },
+  { name: "Plymouth Rock", day: 7, lat: 41.9581, lng: -70.6625 },
+  { name: "Mayflower II, State Pier", day: 7, lat: 41.9590, lng: -70.6610 },
+  { name: "Marshfield beach", day: 8, lat: 42.0880, lng: -70.6560 },
+  { name: "Boston Logan Airport", day: 9, lat: 42.3656, lng: -71.0096 }
+];
+const DAY_LABELS = [
+  "Day 1 — Arrivals", "Day 2 — Deerfield", "Day 3 — Concord", "Day 4 — Lexington",
+  "Day 5 — Quincy", "Day 6 — Boston", "Day 7 — Plymouth", "Day 8 — Beach", "Day 9 — Home"
+];
+
+/* Read from body, not :root — the colour-vision-friendly palette overrides these
+   on body.deuteranomaly, so :root still reports the default values. */
+function dayColor(day) {
+  return getComputedStyle(document.body).getPropertyValue("--day-" + day).trim() || "#888";
+}
+
+let tripMap = null;
+let mapLayers = [];
+
+function refreshMapColors() {
+  for (const { day, layer } of mapLayers) {
+    const c = dayColor(day);
+    if (layer.setStyle) layer.setStyle(layer._isMarker ? { fillColor: c } : { color: c });
+  }
+  buildLegend();
+}
+
+function buildLegend() {
+  const legend = document.getElementById("mapLegend");
+  if (!legend) return;
+  legend.innerHTML = DAY_LABELS.map(function (label, i) {
+    return '<span class="map-legend-item"><span class="map-legend-dot" style="background:' + dayColor(i + 1) + '"></span>' + label + "</span>";
+  }).join("");
+}
+
+function initMap() {
+  if (tripMap || typeof L === "undefined") return;
+  tripMap = L.map("tripMap", { scrollWheelZoom: false });
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19,
+    attribution: '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a>'
+  }).addTo(tripMap);
+
+  const byDay = {};
+  for (const loc of LOCATIONS) (byDay[loc.day] = byDay[loc.day] || []).push(loc);
+
+  for (const key of Object.keys(byDay)) {
+    const day = Number(key);
+    const pts = byDay[day];
+    const color = dayColor(day);
+    if (pts.length > 1) {
+      const line = L.polyline(pts.map(function (p) { return [p.lat, p.lng]; }),
+        { color: color, weight: 3, opacity: 0.7 }).addTo(tripMap);
+      mapLayers.push({ day: day, layer: line });
+    }
+    for (const p of pts) {
+      const marker = p.lodging
+        ? L.marker([p.lat, p.lng], { title: p.name })
+        : L.circleMarker([p.lat, p.lng], {
+            radius: 8, fillColor: color, color: "#fff",
+            weight: 2, opacity: 1, fillOpacity: 0.9
+          });
+      marker.addTo(tripMap).bindPopup("<strong>" + escHtml(p.name) + "</strong><br>" +
+        DAY_LABELS[day - 1] + (p.lodging ? "<br>Where we sleep" : ""));
+      if (!p.lodging) { marker._isMarker = true; mapLayers.push({ day: day, layer: marker }); }
+    }
+  }
+
+  tripMap.fitBounds(L.latLngBounds(LOCATIONS.map(function (p) { return [p.lat, p.lng]; })).pad(0.08));
+  buildLegend();
+
+  // Scroll-wheel zoom only once the map has been clicked, so the page still scrolls.
+  const el = document.getElementById("tripMap");
+  el.addEventListener("click", function () { tripMap.scrollWheelZoom.enable(); });
+  el.addEventListener("mouseleave", function () { tripMap.scrollWheelZoom.disable(); });
+}
+
+const mapToggle = document.getElementById("mapToggle");
+const mapSection = document.getElementById("mapSection");
+const mapToggleLabel = document.getElementById("mapToggleLabel");
+
+function setMap(visible) {
+  mapSection.classList.toggle("visible", visible);
+  mapToggle.setAttribute("aria-expanded", String(visible));
+  mapToggleLabel.textContent = visible ? "Hide route map" : "Show route map";
+  store("mapVisible", visible ? "on" : "off");
+  if (visible) {
+    initMap();
+    setTimeout(function () { if (tripMap) tripMap.invalidateSize(); }, 60);
+  }
+}
+mapToggle.addEventListener("click", function () { setMap(!mapSection.classList.contains("visible")); });
+if (read("mapVisible") === "on") setMap(true);
+
+/* Deep links to #mapSection should open it. */
+if (location.hash === "#mapSection") setMap(true);
+</script>
+
 </body>
 </html>
